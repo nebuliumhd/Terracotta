@@ -1,7 +1,7 @@
 ﻿# CMakeList.txt : Top-level CMake project file, do global configuration
 # and include sub-projects here.
 #
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required(VERSION 3.8)
 
 # Enable Hot Reload for MSVC compilers if supported.
 if (POLICY CMP0141)
@@ -12,4 +12,5 @@ endif()
 project ("Terracotta")
 
 # Include sub-projects.
-add_subdirectory ("Terracotta")
+# add_subdirectory ("TerracottaGame")
+add_subdirectory ("TerracottaEngine")

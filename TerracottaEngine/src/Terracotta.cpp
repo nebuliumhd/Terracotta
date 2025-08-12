@@ -1,7 +1,7 @@
 ﻿// Terracotta.cpp : Defines the entry point for the application.
 //
 
-#include "Terracotta.h"
+#include "Terracotta.hpp"
 
 using namespace std;
 

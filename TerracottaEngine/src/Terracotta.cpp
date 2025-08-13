@@ -1,12 +1,7 @@
-﻿// Terracotta.cpp : Defines the entry point for the application.
-//
-
-#include "Terracotta.hpp"
-
-using namespace std;
+﻿#include "Terracotta.hpp"
 
 int main()
 {
-	cout << "Hello CMake." << endl;
+	std::cout << "Hello world!\n";
 	return 0;
 }

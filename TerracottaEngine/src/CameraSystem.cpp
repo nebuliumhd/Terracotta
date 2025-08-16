@@ -26,19 +26,22 @@ void Camera::ProcessInput()
 		SPDLOG_ERROR("The InputSystem is not initialized for the camera!");
 	}
 
+	Position.x += 0.01f;
+	NeedsUpdate = true;
+
 	if (is->IsKeyDown(GLFW_KEY_W)) {
-		Position.y += 0.1f;
+		Position.y += 0.01f;
 		NeedsUpdate = true;
 	} else if (is->IsKeyDown(GLFW_KEY_S)) {
-		Position.y -= 0.1f;
+		Position.y -= 0.01f;
 		NeedsUpdate = true;
 	}
 
 	if (is->IsKeyDown(GLFW_KEY_A)) {
-		Position.x -= 0.1f;
+		Position.x -= 0.01f;
 		NeedsUpdate = true;
 	} else if (is->IsKeyDown(GLFW_KEY_D)) {
-		Position.x += 0.1f;
+		Position.x += 0.01f;
 		NeedsUpdate = true;
 	}
 }

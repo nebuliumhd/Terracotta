@@ -11,6 +11,8 @@ Application::Application(int windowWidth, int windowHeight)
 
 	// Initialize other important systems
 	m_window = std::make_unique<Window>(windowWidth, windowHeight);
+	m_maxUPS = 60;
+	m_targetUpdateDelay = 1.0f / (float)m_maxUPS;
 	m_maxFPS = m_window->GetPrimaryMonitorRefreshRate();
 	m_targetFrameDelay = 1.0f / (float)m_maxFPS;
 	SPDLOG_INFO("m_maxFPS: {} at {}ms", m_maxFPS, m_targetFrameDelay);
@@ -41,6 +43,7 @@ Application::Application(int windowWidth, int windowHeight)
 	m_inputSystem->Init();
 	m_inputSystem->RegisterCallbacks(m_eventSystem.get());*/
 	
+	m_layers.PushLayer(new DearImGuiLayer(m_window->GetGLFWWindow(), "Main DearImGui Layer"));
 
 	SPDLOG_INFO("Finished creating application.");
 }
@@ -59,19 +62,17 @@ void Application::Run()
 	updateAcc += deltaTime;
 	renderAcc += deltaTime;
 
-	// Process inputs constantly so that it's smooth
-	processInput();
-
 	// Should update if enough time has elapsed (default = ~0.0167ms for 60 UPS)
 	// USE WHILE LOOP!!!
 	while (updateAcc >= m_targetUpdateDelay) {
+		processInput(); // Keep this tied to update for now
 		update(deltaTime);
 		updateAcc -= m_targetUpdateDelay;
 	}
 
 	// Should render if enough time has elapsed (default = same as UPS)
 	// USE IF STATEMENT!!!
-	if (renderAcc >= m_targetFrameDelay) {
+	while (renderAcc >= m_targetFrameDelay) {
 		render();
 		renderAcc -= m_targetFrameDelay;
 	}
@@ -103,6 +104,13 @@ void Application::render()
 {
 	// Buffer clears in main renderer
 	m_renderer->OnRender();
+
+	for (Layer* layer : m_layers) {
+		layer->OnRender();
+		layer->OnImGuiRender();
+	}
+
+	// std::this_thread::sleep_for(1000)
 
 	glfwSwapBuffers(m_window->GetGLFWWindow());
 }

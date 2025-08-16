@@ -30,7 +30,7 @@ Window::Window(int windowWidth, int windowHeight) :
 		SPDLOG_ERROR("Failed to get GLFW's process address!");
 		return;
 	}
-	glfwSwapInterval(1); // VSYNC = 1
+	glfwSwapInterval(GLFW_FALSE); // VSYNC = 1
 
 	// OpenGL settings and callbacks later
 

@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include "GLFW/glfw3.h"
 
 namespace TerracottaEngine
 {
@@ -20,7 +21,7 @@ public:
 	virtual void OnImGuiRender() {}
 
 	const std::string& GetName() { return m_name; }
-private:
+protected:
 	std::string m_name;
 };
 
@@ -39,9 +40,18 @@ private:
 	std::vector<Layer*> m_layers;
 };
 
-class DearImGuiLayer
+class DearImGuiLayer : public Layer
 {
 public:
+	DearImGuiLayer(GLFWwindow* glfwWindow, const std::string& layerName);
+	~DearImGuiLayer();
+
+	void OnAttach() override;
+	void OnDetach() override;
+	void OnUpdate(const float deltaTime) override;
+	void OnRender() override;
+	void OnImGuiRender() override;
 private:
+	GLFWwindow* m_glfwWindow = nullptr;
 };
 }

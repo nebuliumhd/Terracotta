@@ -10,6 +10,8 @@ add_subdirectory(vendor/glfw)
 add_subdirectory(vendor/glm)
 add_subdirectory(vendor/glad)
 add_subdirectory(vendor/spdlog)
+add_subdirectory(vendor/stb)
+add_subdirectory(vendor/fmod)
 
 set(ENGINE_INC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 file(GLOB_RECURSE ENGINE_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
@@ -22,13 +24,11 @@ if (CMAKE_VERSION VERSION_GREATER 3.12)
 endif()
 
 # TODO: Add tests and install targets if needed.
+# DON'T NEED TO MANUALLY LIST LIBRARY INCLUDE DIRECTORIES IF THEIR LIBRARY TARGET'S INCLUDES  IS PUBLIC
 target_include_directories(Terracotta
 	PRIVATE 
 		${ENGINE_INC} # TerracottaEngine
-		${CMAKE_CURRENT_SOURCE_DIR}/vendor/glfw/include # GLFW
-		${CMAKE_CURRENT_SOURCE_DIR}/vendor/glm/include # GLM
-		${CMAKE_CURRENT_SOURCE_DIR}/vendor/glad/include # Glad
-
+		${CMAKE_CURRENT_SOURCE_DIR}/vendor/entt/include # Header only library
 )
 
 # Link libraries here (LINK FROM MOST DEPENDENT TO LEAST DEPENDENT)
@@ -39,4 +39,6 @@ target_link_libraries(Terracotta
 		glm # Static lib
 		glad # Objects
 		spdlog # Static lib
+		stb # Objects
+		fmod # Static (on Windows) / Shared (on Unix)
 )

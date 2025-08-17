@@ -61,19 +61,12 @@ Application::Application(int windowWidth, int windowHeight)
 
 	m_audioSystem = std::make_unique<AudioSystem>(*m_subsystemManager);
 	m_subsystemManager->RegisterSubsystem(m_audioSystem.get());
-	m_audioSystem->PlayAudio("C:\\Windows\\Media\\Alarm05.wav");
+	// Load the audio system in the future
+	// UUIDv4::UUID alarmID = m_audioSystem->LoadAudio("C:\\Windows\\Media\\Alarm05.wav");
+	// m_audioSystem->PlayAudio(alarmID, ChannelGroupID::Master);
 
 	m_renderer = std::make_unique<Renderer>(*m_subsystemManager, *m_window);
 	m_subsystemManager->RegisterSubsystem(m_renderer.get());
-
-	// InputSystem::Init();
-	/*m_eventSystem = std::make_unique<EventSystem>();
-	m_eventSystem->Init();
-	m_eventSystem->LinkToGLFWWindow(m_window->GetGLFWWindow());*/
-
-	/*m_inputSystem = std::make_unique<InputSystem>();
-	m_inputSystem->Init();
-	m_inputSystem->RegisterCallbacks(m_eventSystem.get());*/
 	
 	m_layers.PushLayer(new DearImGuiLayer(m_window->GetGLFWWindow(), "Main DearImGui Layer"));
 

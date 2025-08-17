@@ -8,17 +8,16 @@ namespace TerracottaEngine
 InputSystem::InputSystem(SubsystemManager& manager) :
 	Subsystem(manager)
 {
-
+	m_keys.fill(InputState::RELEASED);
+	m_mouse.fill(InputState::RELEASED);
 }
 InputSystem::~InputSystem()
 {
-
+	Shutdown();
 }
 
 bool InputSystem::Init()
 {
-	m_keys.fill(InputState::RELEASED);
-	m_mouse.fill(InputState::RELEASED);
 	return true;
 }
 void InputSystem::OnUpdate(const float deltaTime)
@@ -36,8 +35,8 @@ void InputSystem::RegisterCallbacks(EventSystem* es)
 	es->AddListener<KeyPressEvent>([this](const KeyPressEvent& e) { m_keys[KEY_INDEX(e.Keycode)] = InputState::PRESSED; });
 	es->AddListener<KeyRepeatEvent>([this](const KeyRepeatEvent& e) { m_keys[KEY_INDEX(e.Keycode)] = InputState::REPEATED; });
 	es->AddListener<KeyReleaseEvent>([this](const KeyReleaseEvent& e) { m_keys[KEY_INDEX(e.Keycode)] = InputState::RELEASED; });
-	es->AddListener<MouseButtonPressEvent>([this](const MouseButtonPressEvent& e) { m_keys[KEY_INDEX(e.Keycode)] = InputState::PRESSED; });
-	es->AddListener<MouseButtonReleaseEvent>([this](const MouseButtonReleaseEvent& e) { m_keys[KEY_INDEX(e.Keycode)] = InputState::RELEASED; });
+	es->AddListener<MouseButtonPressEvent>([this](const MouseButtonPressEvent& e) { m_mouse[e.Keycode] = InputState::PRESSED; });
+	es->AddListener<MouseButtonReleaseEvent>([this](const MouseButtonReleaseEvent& e) { m_mouse[e.Keycode] = InputState::RELEASED; });
 }
 
 bool InputSystem::IsKeyPressed(int key)

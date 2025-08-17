@@ -29,6 +29,7 @@ target_include_directories(Terracotta
 	PRIVATE 
 		${ENGINE_INC} # TerracottaEngine
 		${CMAKE_CURRENT_SOURCE_DIR}/vendor/entt/include # Header only library
+		${CMAKE_CURRENT_SOURCE_DIR}/vendor/uuid/include # Header only library
 )
 
 # Link libraries here (LINK FROM MOST DEPENDENT TO LEAST DEPENDENT)

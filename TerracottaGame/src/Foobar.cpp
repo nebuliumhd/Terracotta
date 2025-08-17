@@ -7,7 +7,7 @@ void GameInit(GameState* state)
 }
 void GameUpdate(GameState* state)
 {
-	std::cout << "Old function!\n";
+	// std::cout << "Old function!\n";
 }
 void GameShutdown(GameState* state)
 {

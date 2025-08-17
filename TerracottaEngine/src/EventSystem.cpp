@@ -12,7 +12,7 @@ EventSystem::EventSystem(SubsystemManager& manager) :
 }
 EventSystem::~EventSystem()
 {
-
+	Shutdown();
 }
 bool EventSystem::Init()
 {
@@ -24,11 +24,12 @@ void EventSystem::OnUpdate(const float deltaTime)
 }
 void EventSystem::Shutdown()
 {
-
+	// TODO: Perhaps remove the GLFW bindings?
 }
 
 // TODO/WARNING: Might need to move the template functions into the header file!
 static void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+static void glfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 
 void EventSystem::LinkToGLFWWindow(GLFWwindow* glfwWindow)
 {
@@ -39,6 +40,7 @@ void EventSystem::LinkToGLFWWindow(GLFWwindow* glfwWindow)
 
 	// All callbacks
 	glfwSetKeyCallback(glfwWindow, glfwKeyCallback);
+	glfwSetMouseButtonCallback(glfwWindow, glfwMouseButtonCallback);
 
 	// Store the EventSystem in the GLFWwindow instance
 	glfwSetWindowUserPointer(glfwWindow, this);
@@ -70,4 +72,26 @@ static void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int actio
 		es->DispatchEvent(release);
 	}
 }
+
+static void glfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+{
+	EventSystem* es = static_cast<EventSystem*>(glfwGetWindowUserPointer(window));
+	assert(es && "EventSystem is nullptr!");
+
+	switch (action) {
+	case GLFW_PRESS:
+		MouseButtonPressEvent press;
+		press.Keycode = button;
+		press.Mods = mods;
+		es->DispatchEvent(press);
+		break;
+	case GLFW_RELEASE:
+	default:
+		MouseButtonReleaseEvent release;
+		release.Keycode = button;
+		release.Mods = mods;
+		es->DispatchEvent(release);
+	}
+}
+
 }

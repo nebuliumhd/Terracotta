@@ -4,6 +4,7 @@
 #include <array>
 #include <vector>
 #include <functional>
+#include "spdlog/spdlog.h"
 #include "Subsystem.hpp"
 
 // Template metaprogramming
@@ -101,10 +102,14 @@ public:
 		}
 	}
 private:
-	std::array<std::vector<InputEventFunc>, static_cast<uint32_t>(InputEventType::NUM_INPUT_EVENTS)> m_inputSubscribers;
+	std::array<std::vector<InputEventFunc>, static_cast<size_t>(InputEventType::NUM_INPUT_EVENTS)> m_inputSubscribers;
 
 	template <typename T>
-	auto& getVector();
+	auto& getVector()
+	{
+		SPDLOG_ERROR("There is no event std::vector hooked up to this");
+		return nullptr;
+	}
 };
 
 // TODO: Update these as more get added!

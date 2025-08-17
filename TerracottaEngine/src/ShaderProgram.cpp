@@ -26,9 +26,9 @@ void ShaderProgram::InitializeShaderProgram(const std::filesystem::path& vertexS
 	if (linkStatus == GL_FALSE) {
 		std::vector<GLchar> linkErrMsg(infoLogLength);
 		glGetProgramInfoLog(m_id, infoLogLength, &infoLogLength, linkErrMsg.data());
-		SPDLOG_ERROR("{} and {} have failed to link: {}", vertexShader.filename().string(), fragmentShader.filename().string(), linkErrMsg.data());
+		SPDLOG_ERROR("\"{}\" and \"{}\" have failed to link: {}", vertexShader.filename().string(), fragmentShader.filename().string(), linkErrMsg.data());
 	} else {
-		SPDLOG_INFO("{} and {} have linked successfully!", vertexShader.filename().string(), fragmentShader.filename().string());
+		SPDLOG_INFO("\"{}\" and \"{}\" have linked successfully!", vertexShader.filename().string(), fragmentShader.filename().string());
 	}
 
 	// Clean up
@@ -43,7 +43,7 @@ GLuint ShaderProgram::compileShader(GLuint type, const std::filesystem::path& sh
 {
 	// Ensure path is valid
 	if (!std::filesystem::exists(shader)) {
-		SPDLOG_ERROR("There is no shader file with the name {} found in {}", shader.filename().string(), shader.parent_path().string());
+		SPDLOG_ERROR("There is no shader file with the name \"{}\" found in \"{}\"", shader.filename().string(), shader.parent_path().string());
 		return 0;
 	}
 
@@ -66,7 +66,7 @@ GLuint ShaderProgram::compileShader(GLuint type, const std::filesystem::path& sh
 		shaderCode = sstr.str();
 		shaderFileStream.close();
 	} else {
-		SPDLOG_ERROR("Could not open the shader file {} found in {}", shader.filename().string(), shader.parent_path().string());
+		SPDLOG_ERROR("Could not open the shader file \"{}\" found in \"{}\"", shader.filename().string(), shader.parent_path().string());
 		return 0;
 	}
 
@@ -81,9 +81,9 @@ GLuint ShaderProgram::compileShader(GLuint type, const std::filesystem::path& sh
 	if (shaderStatus == GL_FALSE) {
 		std::vector<GLchar> compErrMsg(infoLogLength);
 		glGetProgramInfoLog(m_id, infoLogLength, &infoLogLength, compErrMsg.data());
-		SPDLOG_ERROR("{} has failed to compile: {}", shader.filename().string(), compErrMsg.data());
+		SPDLOG_ERROR("\"{}\" has failed to compile: {}", shader.filename().string(), compErrMsg.data());
 	} else {
-		SPDLOG_INFO("{} has compiled successfully!", shader.filename().string());
+		SPDLOG_INFO("\"{}\" has compiled successfully!", shader.filename().string());
 	}
 
 	return shaderID;
@@ -93,7 +93,7 @@ void ShaderProgram::UploadUniformInt(const std::string& uniformName, GLint value
 {
 	GLint location = glGetUniformLocation(m_id, uniformName.c_str());
 	if (location == -1) {
-		SPDLOG_ERROR("There is no int uniform called {} in the shader program.", uniformName);
+		SPDLOG_ERROR("There is no int uniform called \"{}\" in the shader program.", uniformName);
 	}
 	glUniform1i(location, value);
 }
@@ -101,7 +101,7 @@ void ShaderProgram::UploadUniformMat4(const std::string& uniformName, const glm:
 {
 	GLint location = glGetUniformLocation(m_id, uniformName.c_str());
 	if (location == -1) {
-		SPDLOG_ERROR("There is no mat4 uniform called {} in the shader program.", uniformName);
+		SPDLOG_ERROR("There is no mat4 uniform called \"{}\" in the shader program.", uniformName);
 	}
 	glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
 }

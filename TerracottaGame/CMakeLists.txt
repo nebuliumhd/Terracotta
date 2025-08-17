@@ -2,8 +2,10 @@
 
 project("TerracottaGame")
 
-add_library(game SHARED
-	
-)
+set(GAME_INC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+file(GLOB_RECURSE GAME_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 
-target_include_directories(game PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(game SHARED ${GAME_SRC})
+
+# TODO: Hide headers from game engine (only expose public API)
+target_include_directories(game PUBLIC ${GAME_INC})

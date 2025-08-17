@@ -16,7 +16,6 @@ public:
 	glm::mat4 View;
 	glm::mat4 Projection;
 
-	void ProcessInput();
 	void Update(const float deltaTime);
 
 	// Other stuff later...

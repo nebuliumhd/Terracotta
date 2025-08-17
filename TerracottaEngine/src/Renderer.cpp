@@ -16,11 +16,11 @@ Renderer::Renderer(SubsystemManager& subsystemManager, Window& appWindow) :
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	m_shader = std::make_unique<ShaderProgram>();
-	m_shader->InitializeShaderProgram("../../../../TerracottaEngine/res/DefaultVert.glsl", "../../../../TerracottaEngine/res/DefaultFrag.glsl");
+	m_shader->InitializeShaderProgram("../../../../../TerracottaEngine/res/DefaultVert.glsl", "../../../../../TerracottaEngine/res/DefaultFrag.glsl");
 	m_shader->UploadUniformMat4("u_view", m_camera.View);
 	m_shader->UploadUniformMat4("u_projection", m_camera.Projection);
 
-	m_texture = std::make_unique<Texture>("../../../../TerracottaEngine/res/DefaultTexture.jpg");
+	m_texture = std::make_unique<Texture>("../../../../../TerracottaEngine/res/DefaultTexture.jpg");
 	m_texture->Activate();
 	m_texture->Bind();
 	m_shader->UploadUniformInt("u_texture", 0 /*For GL_TEXTURE0*/);
@@ -58,15 +58,11 @@ void Renderer::Shutdown()
 
 }
 
-void Renderer::OnProcessInput()
-{
-	m_camera.ProcessInput();
-}
 void Renderer::OnUpdate(const float deltaTime)
 {
-	if (m_camera.NeedsUpdate) {
-		m_camera.Update(deltaTime);
+	m_camera.Update(deltaTime);
 
+	if (m_camera.NeedsUpdate) {
 		m_shader->Use();
 		m_shader->UploadUniformMat4("u_view", m_camera.View);
 		m_shader->UploadUniformMat4("u_projection", m_camera.Projection);

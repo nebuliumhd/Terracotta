@@ -19,8 +19,7 @@ public:
 	virtual bool Init() override;
 	virtual void OnUpdate(const float deltaTime) override;
 	virtual void Shutdown() override;
-
-	void OnProcessInput();
+	
 	void OnRender();
 private:
 	// Make sure this updated if necessary!

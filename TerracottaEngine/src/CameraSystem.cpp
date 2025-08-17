@@ -19,15 +19,12 @@ Camera::~Camera()
 
 }
 
-void Camera::ProcessInput()
+void Camera::Update(const float deltaTime)
 {
 	InputSystem* is = m_managerRef.GetSubsystem<InputSystem>();
 	if (!is) {
 		SPDLOG_ERROR("The InputSystem is not initialized for the camera!");
 	}
-
-	Position.x += 0.01f;
-	NeedsUpdate = true;
 
 	if (is->IsKeyDown(GLFW_KEY_W)) {
 		Position.y += 0.01f;
@@ -44,9 +41,7 @@ void Camera::ProcessInput()
 		Position.x += 0.01f;
 		NeedsUpdate = true;
 	}
-}
-void Camera::Update(const float deltaTime)
-{
+
 	View = glm::lookAt(Position, Position + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 }
 }

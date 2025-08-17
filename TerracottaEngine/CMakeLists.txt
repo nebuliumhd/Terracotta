@@ -34,6 +34,7 @@ target_include_directories(Terracotta
 # Link libraries here (LINK FROM MOST DEPENDENT TO LEAST DEPENDENT)
 target_link_libraries(Terracotta
 	PRIVATE
+		game # Shared lib
 		imgui # Objects
 		glfw # Static lib
 		glm # Static lib

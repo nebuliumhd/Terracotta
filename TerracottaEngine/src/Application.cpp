@@ -1,37 +1,11 @@
-// Hot reload preprocessors
-#ifdef _WIN32
-// Windows
-#include <Windows.h>
-#define DLL_HANDLE HMODULE
-#define LoadGameDLL(path) LoadLibraryA(path)
-#define GetGameProcAddress(dll, fn) GetProcAddress(dll, fn)
-#define UnloadGameDLL(dll) FreeLibrary(dll)
-#define DLL_EXTENSION ".dll"
-#else
-// macOS / Linux
-#include <dlfcn.h>
-#define DLL_HANDLE void*
-#define LoadGameDLL(path) dlopen(path, RTLD_NOW)
-#define GetGameProcAddress(dll, fn) dlsym(dll, fn)
-#define UnloadGameDLL(dll) dlclose(dll)
-#define DLL_EXTENSION ".so"
-#endif
-
+// Hot reload for Unix operating systems
 #include <string>
-#include <filesystem>
 #include "spdlog/spdlog.h"
 #include "Application.hpp"
 #include "InputSystem.hpp"
 
 namespace TerracottaEngine
 {
-static bool LoadGameAPI(const std::string& path, DLL_HANDLE& dllHandle, GameAPI& api);
-// Stuff for the game
-std::string dllPath = "game" DLL_EXTENSION;
-DLL_HANDLE gameDLL = nullptr;
-GameAPI game;
-GameState state;
-
 Application::Application(int windowWidth, int windowHeight)
 {
 	// Logging
@@ -62,34 +36,25 @@ Application::Application(int windowWidth, int windowHeight)
 	m_audioSystem = std::make_unique<AudioSystem>(*m_subsystemManager);
 	m_subsystemManager->RegisterSubsystem(m_audioSystem.get());
 	// Load the audio system in the future
-	// UUIDv4::UUID alarmID = m_audioSystem->LoadAudio("C:\\Windows\\Media\\Alarm05.wav");
-	// m_audioSystem->PlayAudio(alarmID, ChannelGroupID::Master);
+	UUIDv4::UUID songID = m_audioSystem->LoadAudio("../../../../../TerracottaEngine/res/audio.ogg");
+	m_audioSystem->PlayAudio(songID, ChannelGroupID::Master);
 
 	m_renderer = std::make_unique<Renderer>(*m_subsystemManager, *m_window);
 	m_subsystemManager->RegisterSubsystem(m_renderer.get());
 	
 	m_layers.PushLayer(new DearImGuiLayer(m_window->GetGLFWWindow(), "Main DearImGui Layer"));
 
-	// Check game
-	if (!LoadGameAPI(dllPath, gameDLL, game)) {
-		SPDLOG_ERROR("Failed to load the game's .dll/.dylib/.so file!");
-		return;
-	}
-	game.Init(&state);
-
 	SPDLOG_INFO("Finished creating application.");
 }
 Application::~Application()
 {
-	// InputSystem::Deinitialize();
-	game.Shutdown(&state);
-	UnloadGameDLL(gameDLL);
+
 }
 
 void Application::Run()
 {
 	static float prevTime = (float)glfwGetTime(), updateAcc = 0.0f, renderAcc = 0.0f;
-
+	
 	float currTime = (float)glfwGetTime();
 	const float deltaTime = currTime - prevTime;
 	prevTime = currTime;
@@ -102,7 +67,6 @@ void Application::Run()
 	// Should update if enough time has elapsed (default = ~0.0167ms for 60 UPS)
 	// USE WHILE LOOP!!!
 	while (updateAcc >= m_targetUpdateDelay) {
-		game.Update(&state, deltaTime); // Update game
 		update(deltaTime); // Update engine
 		updateAcc -= m_targetUpdateDelay;
 	}
@@ -112,29 +76,6 @@ void Application::Run()
 	while (renderAcc >= m_targetFrameDelay) {
 		render();
 		renderAcc -= m_targetFrameDelay;
-	}
-
-	// Hot reload
-	if (std::filesystem::exists("game_temp" DLL_EXTENSION)) {
-		SPDLOG_WARN("Game .dll/.dylib/.so modified, hot reloading...");
-
-		// Stop old game library
-		game.Shutdown(&state);
-		UnloadGameDLL(gameDLL);
-#ifdef _WIN32
-		// Windows: copy to a temporary file to prevent "locking"
-		std::string newDLLPath = "game" DLL_EXTENSION;
-		if (std::filesystem::exists(newDLLPath)) {
-			std::filesystem::remove(newDLLPath);
-		}
-		std::filesystem::rename("game_temp" DLL_EXTENSION, newDLLPath);
-		dllPath = newDLLPath;
-#endif
-		if (!LoadGameAPI(dllPath, gameDLL, game)) {
-			SPDLOG_ERROR("Failed to reload game!");
-			Stop();
-		}
-		game.Init(&state);
 	}
 
 	if (glfwWindowShouldClose(m_window->GetGLFWWindow())) {
@@ -165,28 +106,5 @@ void Application::render()
 	}
 
 	glfwSwapBuffers(m_window->GetGLFWWindow());
-}
-
-
-
-static bool LoadGameAPI(const std::string& path, DLL_HANDLE& dllHandle, GameAPI& api)
-{
-	dllHandle = LoadGameDLL(path.c_str());
-	if (!dllHandle) {
-		SPDLOG_ERROR("Failed to load DLL: {}", path);
-		return false;
-	}
-
-	api.Init = (GameInitFn)GetGameProcAddress(dllHandle, "GameInit");
-	api.Update = (GameUpdateFn)GetGameProcAddress(dllHandle, "GameUpdate");
-	api.Shutdown = (GameShutdownFn)GetGameProcAddress(dllHandle, "GameShutdown");
-
-	if (!api.Init || !api.Update || !api.Shutdown) {
-		SPDLOG_ERROR("Failed to get at least one function address from the game!");
-		UnloadGameDLL(dllHandle);
-		return false;
-	}
-
-	return true;
 }
 }

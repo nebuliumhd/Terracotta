@@ -9,7 +9,7 @@ endif()
 set(FMOD_SDK_DIR $ENV{FMOD_SDK_DIR})
 
 # Get include directory
-set(FMOD_INC
+set(FMOD_INC_DIR
     "${FMOD_SDK_DIR}/api/core/inc"
     "${FMOD_SDK_DIR}/api/studio/inc"
 )
@@ -40,13 +40,6 @@ if(WIN32) # Windows
   else()
     message(FATAL_ERROR "Unknown system processor architecture!")
   endif()
-
-  # For .libs needed by the compiler (NEED SDK INSTALLED)
-  # The .dlls should be copied over before runtime
-  set(FMOD_LIB_DIR
-       "${FMOD_SDK_DIR}/api/core/lib/${ARCHITECTURE}"
-       "${FMOD_SDK_DIR}/api/studio/lib/${ARCHITECTURE}")
-
 elseif(UNIX) # Linux/Unix
   message(STATUS "FMOD - OS: Unix")
 
@@ -71,17 +64,20 @@ elseif(UNIX) # Linux/Unix
   else()
     message(FATAL_ERROR "Unknown system processor architecture!")
   endif()
-
-  set(FMOD_LIB_DIR
-      "${CMAKE_CURRENT_SOURCE_DIR}/unix/${ARCHITECTURE}")
-
 else() # Other
   message(FATAL_ERROR "Unsupported platform")
 endif()
 
+# For .libs needed by the compiler (NEED SDK INSTALLED)
+# The .dlls should be copied over before runtime
+set(FMOD_LIB_DIR
+  "${FMOD_SDK_DIR}/api/core/lib/${ARCHITECTURE}"
+  "${FMOD_SDK_DIR}/api/studio/lib/${ARCHITECTURE}")
+
 message(STATUS "FMOD - Current dir: ${CMAKE_CURRENT_SOURCE_DIR}")
-message(STATUS "FMOD - Core directory: ${FMOD_CORE_DIR}")
-message(STATUS "FMOD - Studio directory: ${FMOD_STUDIO_DIR}")
+message(STATUS "FMOD - SDK directory: ${FMOD_SDK_DIR}")
+message(STATUS "FMOD - Inc directories: ${FMOD_INC_DIR}")
+message(STATUS "FMOD - Lib directories: ${FMOD_LIB_DIR}")
 message(STATUS "FMOD - STATIC LIBS: ${FMOD_STATIC_LIBS}")
 message(STATUS "FMOD - SHARED LIBS: ${FMOD_SHARED_LIBS}")
 
@@ -89,7 +85,9 @@ message(STATUS "FMOD - SHARED LIBS: ${FMOD_SHARED_LIBS}")
 add_library(fmod INTERFACE)
 
 # Include FMOD headers
-target_include_directories(fmod INTERFACE ${FMOD_INC})
+target_include_directories(fmod INTERFACE ${FMOD_INC_DIR})
+# Let other CMake projects know where to look for the files
+target_link_directories(fmod INTERFACE ${FMOD_LIB_DIR})
 
 # Send the FMOD library files depending on platform
 if(WIN32)
@@ -97,6 +95,3 @@ if(WIN32)
 elseif(UNIX)
   target_link_libraries(fmod INTERFACE ${FMOD_SHARED_LIBS})
 endif()
-
-# Let other CMake projects know where to look for the files
-target_link_directories(fmod INTERFACE ${FMOD_LIB_DIR})

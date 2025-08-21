@@ -11,8 +11,9 @@ endif()
 
 # For vendor libraries
 set(GLFW_BUILD_SHARED_LIBS ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-project ("Terracotta")
+project("Terracotta")
 
 # Check if we are using a multi-config generator (Visual Studio, Xcode)
 if(CMAKE_CONFIGURATION_TYPES)
@@ -38,6 +39,6 @@ else()
 endif()
 
 # Build game first
-add_subdirectory ("TerracottaGame")
+add_subdirectory("TerracottaGame")
 # Then build the engine.
-add_subdirectory ("TerracottaEngine")
+add_subdirectory("TerracottaEngine")

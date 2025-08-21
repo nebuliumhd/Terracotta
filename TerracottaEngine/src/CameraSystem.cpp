@@ -3,7 +3,6 @@
 #define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
 #include "InputSystem.hpp"
-#include "AudioSystem.hpp"
 #include "CameraSystem.hpp"
 
 namespace TerracottaEngine
@@ -44,9 +43,9 @@ void Camera::Update(const float deltaTime)
 	}
 
 	if (is->IsMouseButtonPressed(GLFW_MOUSE_BUTTON_1)) {
-		AudioSystem* as = m_managerRef.GetSubsystem<AudioSystem>();
-		UUIDv4::UUID alarmID = as->LoadAudio("C:\\Windows\\Media\\Alarm05.wav");
-		as->PlayAudio(alarmID, ChannelGroupID::Master);
+		// AudioSystem* as = m_managerRef.GetSubsystem<AudioSystem>();
+		// UUIDv4::UUID alarmID = as->LoadAudio("C:\\Windows\\Media\\Alarm05.wav");
+		// as->PlayAudio(alarmID, ChannelGroupID::Master);
 	}
 
 	View = glm::lookAt(Position, Position + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));

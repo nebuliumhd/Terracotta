@@ -5,7 +5,7 @@
 #include <string>
 #include "fmod_studio.hpp"
 #include "fmod.hpp"
-#include "endianness.h"
+#define UUID_DISABLE_SSE
 #include "uuid_v4.h"
 #include "Subsystem.hpp"
 

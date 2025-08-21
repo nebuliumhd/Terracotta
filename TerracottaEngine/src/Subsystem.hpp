@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <unordered_map>
 #include <typeindex>
 // #include "Application.hpp" Avoid using this header

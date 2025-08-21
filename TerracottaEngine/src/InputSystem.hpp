@@ -2,7 +2,7 @@
 
 #include <array>
 #define GLFW_INCLUDE_NONE
-#include "glfw/glfw3.h"
+#include "GLFW/glfw3.h"
 #include "Window.hpp"
 #include "Subsystem.hpp"
 #include "EventSystem.hpp"

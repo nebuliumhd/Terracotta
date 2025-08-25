@@ -18,6 +18,7 @@ InputSystem::~InputSystem()
 
 bool InputSystem::Init()
 {
+	registerCallbacks();
 	return true;
 }
 void InputSystem::OnUpdate(const float deltaTime)
@@ -29,9 +30,10 @@ void InputSystem::Shutdown()
 
 }
 
-void InputSystem::RegisterCallbacks(EventSystem* es)
+void InputSystem::registerCallbacks()
 {
 	// TODO: Move to seperate member functions
+	EventSystem* es = m_manager.GetSubsystem<EventSystem>();
 	es->AddListener<KeyPressEvent>([this](const KeyPressEvent& e) { m_keys[KEY_INDEX(e.Keycode)] = InputState::PRESSED; });
 	es->AddListener<KeyRepeatEvent>([this](const KeyRepeatEvent& e) { m_keys[KEY_INDEX(e.Keycode)] = InputState::REPEATED; });
 	es->AddListener<KeyReleaseEvent>([this](const KeyReleaseEvent& e) { m_keys[KEY_INDEX(e.Keycode)] = InputState::RELEASED; });

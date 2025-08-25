@@ -9,3 +9,10 @@ add_library(game SHARED ${GAME_SRC})
 
 # TODO: Hide headers from game engine (only expose public API)
 target_include_directories(game PUBLIC ${GAME_INC})
+
+# Only header files to talk to libraries
+target_include_directories(game
+	PRIVATE 
+		${ENGINE_INC} # TerracottaEngine
+		${CMAKE_SOURCE_DIR}/TerracottaEngine/vendor/spdlog/include
+)

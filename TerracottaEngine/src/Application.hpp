@@ -1,5 +1,20 @@
 #pragma once
 
+#ifdef _WIN32
+#include <Windows.h>
+#define DLL_HANDLE					HMODULE
+#define LOAD_DLL(path)				LoadLibraryA(path)
+#define UNLOAD_DLL(dll)				FreeLibrary(dll)
+#define GET_DLL_SYMBOL(dll, symbol) GetProcAddress(dll, symbol)
+#elif defined(__APPLE__) || defined(__linux__)
+#define DLL_HANDLE					void*
+#define LOAD_DLL(path)				dlopen(path, RTLD_NOW)
+#define UNLOAD_DLL(dll)				dlclose(dll)
+#define GET_DLL_SYMBOL(dll, symbol) dlsym(dll, symbol)
+#else
+#error Unsupported platform. Must compile on a Windows, macOS, or Linux machine.
+#endif
+
 #include <vector>
 #include <memory>
 #include "Subsystem.hpp"
@@ -10,13 +25,12 @@
 #include "InputSystem.hpp"
 #include "AudioSystem.hpp"
 
-// From the game itself
-#include "Foobar.hpp"
+using GameInitFn = void*(*)();
+using GameUpdateFn = void(*)(void*, float);
+using GameShutdownFn = void(*)(void*);
 
-using GameInitFn = void(*)(GameState*);
-using GameUpdateFn = void(*)(GameState*, float);
-using GameShutdownFn = void(*)(GameState*);
-
+namespace TerracottaEngine
+{
 struct GameAPI
 {
 	GameInitFn Init = nullptr;
@@ -24,8 +38,6 @@ struct GameAPI
 	GameShutdownFn Shutdown = nullptr;
 };
 
-namespace TerracottaEngine
-{
 class Application
 {
 public:
@@ -41,16 +53,22 @@ private:
 	void update(const float deltaTime);
 	void render();
 
-	// TODO: Move hot reload functions here
-
 	// Subsystems
 	std::unique_ptr<SubsystemManager> m_subsystemManager = nullptr;
 	std::unique_ptr<InputSystem> m_inputSystem = nullptr;
 	std::unique_ptr<EventSystem> m_eventSystem = nullptr;
 	std::unique_ptr<AudioSystem> m_audioSystem = nullptr;
 	std::unique_ptr<Renderer> m_renderer = nullptr;
-
 	std::unique_ptr<Window> m_window = nullptr;
+
+	// Game
+	DLL_HANDLE m_dllHandle = nullptr;
+	GameAPI m_gameAPI;
+	void* m_gameInstance = nullptr;
+	// Make sure to manually call the m_gameAPI.Init()
+	bool loadGameDLL();
+	void unloadGameDLL();
+	void reloadGameDLL();
 
 	// Layers
 	LayerStack m_layers;

@@ -36,6 +36,7 @@ public:
 	{
 		m_subsystemsMap[typeid(T)] = subsystem;
 		m_subsystemOrder.push_back(subsystem);
+		subsystem->Init();
 	}
 
 	template <typename T>
@@ -44,8 +45,10 @@ public:
 		m_subsystemsMap.erase(typeid(T));
 
 		auto it = std::find(m_subsystemOrder.begin(), m_subsystemOrder.end(), subsystem);
-		if (it != m_subsystemOrder.end())
+		if (it != m_subsystemOrder.end()) {
+			it.second->Shutdown();
 			m_subsystemOrder.erase(it);
+		}
 	}
 
 	template <typename T>

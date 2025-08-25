@@ -26,14 +26,15 @@ public:
 	void OnUpdate(const float deltaTime) override;
 	void Shutdown() override;
 
-	void RegisterCallbacks(EventSystem* es);
-
 	bool IsKeyPressed(int key);
 	bool IsKeyRepeated(int key);
 	bool IsKeyDown(int key);
 	bool IsMouseButtonPressed(int mouse);
 private:
+	// NOTE MEDIA PLAYBACK KEYS AND OTHER STUFF WILL GO OUT OF BOUNDS!
 	std::array<InputState, GLFW_KEY_LAST - GLFW_KEY_SPACE + 1> m_keys;
 	std::array<InputState, GLFW_MOUSE_BUTTON_LAST + 1> m_mouse;
+
+	void registerCallbacks();
 };
 }

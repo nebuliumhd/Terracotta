@@ -5,20 +5,12 @@ cmake_minimum_required(VERSION 3.10)
 
 project("TerracottaEngine")
 
-add_subdirectory(vendor/imgui-docking)
-add_subdirectory(vendor/glfw)
-add_subdirectory(vendor/glm)
-add_subdirectory(vendor/glad)
-add_subdirectory(vendor/spdlog)
-add_subdirectory(vendor/stb)
-add_subdirectory(vendor/fmod)
-
 set(ENGINE_INC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 file(GLOB_RECURSE ENGINE_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 
 # Add source to this project's executable.
 add_executable(Terracotta ${ENGINE_SRC})
-target_compile_options(Terracotta PRIVATE -msse4.1)
+# target_compile_options(Terracotta PRIVATE -msse4.1)
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET Terracotta PROPERTY CXX_STANDARD 20)

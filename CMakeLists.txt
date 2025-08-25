@@ -38,6 +38,17 @@ else()
 	set(CMAKE_PDB_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}/pdb)
 endif()
 
+message(STATUS "Main CMakeLists.txt")
+
+# Build external libraries first
+add_subdirectory("TerracottaEngine/vendor/imgui-docking")
+add_subdirectory("TerracottaEngine/vendor/glfw")
+add_subdirectory("TerracottaEngine/vendor/glm")
+add_subdirectory("TerracottaEngine/vendor/glad")
+add_subdirectory("TerracottaEngine/vendor/spdlog")
+add_subdirectory("TerracottaEngine/vendor/stb")
+add_subdirectory("TerracottaEngine/vendor/fmod")
+
 # Build game first
 add_subdirectory("TerracottaGame")
 # Then build the engine.

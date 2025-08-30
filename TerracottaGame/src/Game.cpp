@@ -1,27 +1,31 @@
 #include "spdlog/spdlog.h"
-#include "Game.hpp"
-
-// Game engine API
-void* GameInit()
-{
-	TerracottaGame::Game* game = new TerracottaGame::Game();
-	game->Init();
-	return game;
-}
-
-void GameUpdate(void* game, float deltaTime)
-{
-	reinterpret_cast<TerracottaGame::Game*>(game)->Update(deltaTime);
-}
-
-void GameShutdown(void* game)
-{
-	reinterpret_cast<TerracottaGame::Game*>(game)->Shutdown();
-}
-//
+#include "GameAPI.hpp"
 
 namespace TerracottaGame
 {
+static TerracottaEngine::EngineAPI* s_engineAPI;
+
+// Game engine API
+GameHandle GameInit(TerracottaEngine::EngineAPI* engine)
+{
+	TerracottaGame::Game* game = new TerracottaGame::Game();
+	game->Init();
+	s_engineAPI = engine;
+	return game;
+}
+
+void GameUpdate(GameHandle game, float deltaTime)
+{
+	reinterpret_cast<TerracottaGame::Game*>(game)->Update(deltaTime);
+	s_engineAPI->Log(s_engineAPI->Instance, "HELLO FROM GAME WOW!!!");
+}
+
+void GameShutdown(GameHandle game)
+{
+	reinterpret_cast<TerracottaGame::Game*>(game)->Shutdown();
+	s_engineAPI = nullptr;
+}
+
 void MainMenuState::Enter()
 {
 

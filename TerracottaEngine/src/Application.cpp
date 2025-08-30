@@ -2,10 +2,16 @@
 #include <string>
 #include "spdlog/spdlog.h"
 #include "Application.hpp"
+#include "EngineAPI.hpp"
 #include "InputSystem.hpp"
 
 namespace TerracottaEngine
 {
+static void Log(EngineHandle inst, const char* msg)
+{
+	reinterpret_cast<Application*>(inst)->Log(msg);
+}
+
 Application::Application(int windowWidth, int windowHeight)
 {
 	// Logging
@@ -22,7 +28,7 @@ Application::Application(int windowWidth, int windowHeight)
 
 	// TODO: Avoid using the new keyword in the future
 	m_subsystemManager = std::make_unique<SubsystemManager>(*this);
-	
+
 	m_eventSystem = std::make_unique<EventSystem>(*m_subsystemManager);
 	m_subsystemManager->RegisterSubsystem(m_eventSystem.get());
 	m_eventSystem->LinkToGLFWWindow(m_window->GetGLFWWindow());
@@ -41,15 +47,19 @@ Application::Application(int windowWidth, int windowHeight)
 
 	m_renderer = std::make_unique<Renderer>(*m_subsystemManager, *m_window);
 	m_subsystemManager->RegisterSubsystem(m_renderer.get());
-	
+
 	m_layers.PushLayer(new DearImGuiLayer(m_window->GetGLFWWindow(), "Main DearImGui Layer"));
 
 	// Game initialization
 	if (!loadGameDLL()) {
 		SPDLOG_ERROR("Failed to load the game's shared library!");
-		assert(0);
 	}
-	m_gameAPI.Init();
+
+	m_engineAPI = EngineAPI{
+		this,
+		&TerracottaEngine::Log
+	};
+	m_gameAPI.Init(&m_engineAPI);
 	SPDLOG_INFO("Loaded the game's shared library.");
 
 	SPDLOG_INFO("Finished creating application.");
@@ -62,7 +72,7 @@ Application::~Application()
 void Application::Run()
 {
 	static float prevTime = (float)glfwGetTime(), updateAcc = 0.0f, renderAcc = 0.0f;
-	
+
 	float currTime = (float)glfwGetTime();
 	const float deltaTime = currTime - prevTime;
 	prevTime = currTime;
@@ -144,7 +154,7 @@ bool Application::loadGameDLL()
 		m_dllHandle = nullptr;
 		return false;
 	}
-	
+
 	return true;
 }
 void Application::unloadGameDLL()
@@ -162,7 +172,7 @@ void Application::unloadGameDLL()
 	SPDLOG_INFO("Shut down the game!");
 }
 void Application::reloadGameDLL()
-	{
+{
 	m_gameAPI.Shutdown(m_gameInstance);
 
 	UNLOAD_DLL(m_dllHandle);
@@ -175,6 +185,6 @@ void Application::reloadGameDLL()
 		return;
 	}
 
-	m_gameInstance = m_gameAPI.Init();
+	m_gameInstance = m_gameAPI.Init(&m_engineAPI);
 }
 }

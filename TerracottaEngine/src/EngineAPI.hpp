@@ -1,6 +1,13 @@
 #pragma once
 
+using EngineHandle = void*;
+
+namespace TerracottaEngine
+{
 struct EngineAPI
 {
-	void 
+	EngineHandle Instance;
+
+	void (*Log)(EngineHandle eng, const char* msg);
 };
+}

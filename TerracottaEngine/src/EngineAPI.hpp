@@ -1,6 +1,7 @@
 #pragma once
 
 using EngineHandle = void*;
+using LogFn = void(*)(EngineHandle, const char*);
 
 namespace TerracottaEngine
 {
@@ -8,6 +9,6 @@ struct EngineAPI
 {
 	EngineHandle Instance;
 
-	void (*Log)(EngineHandle eng, const char* msg);
+	LogFn Log;
 };
 }

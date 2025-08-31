@@ -3,26 +3,26 @@
 
 namespace TerracottaGame
 {
-static TerracottaEngine::EngineAPI* s_engineAPI;
+namespace TE = TerracottaEngine;
+// Game currently keeps track of one engine instance
+static TE::EngineAPI* s_engineAPI;
 
 // Game engine API
-GameHandle GameInit(TerracottaEngine::EngineAPI* engine)
+GameHandle GameInit(TE::EngineAPI* engine)
 {
-	TerracottaGame::Game* game = new TerracottaGame::Game();
-	game->Init();
+	Game* game = new Game();
 	s_engineAPI = engine;
+	game->Init();
 	return game;
 }
-
 void GameUpdate(GameHandle game, float deltaTime)
 {
-	reinterpret_cast<TerracottaGame::Game*>(game)->Update(deltaTime);
-	s_engineAPI->Log(s_engineAPI->Instance, "HELLO FROM GAME WOW!!!");
+	reinterpret_cast<Game*>(game)->Update(deltaTime);
+	// s_engineAPI->Log(s_engineAPI->Instance, "HELLO FROM GAME WOW!!!");
 }
-
 void GameShutdown(GameHandle game)
 {
-	reinterpret_cast<TerracottaGame::Game*>(game)->Shutdown();
+	reinterpret_cast<Game*>(game)->Shutdown();
 	s_engineAPI = nullptr;
 }
 

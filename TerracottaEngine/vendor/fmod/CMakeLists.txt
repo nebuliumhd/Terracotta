@@ -95,3 +95,31 @@ if(WIN32)
 elseif(UNIX)
   target_link_libraries(fmod INTERFACE ${FMOD_SHARED_LIBS})
 endif()
+
+# Collect full paths from both library dirs
+foreach(dir IN LISTS FMOD_LIB_DIR)
+    foreach(dll IN LISTS FMOD_SHARED_LIBS)
+        list(APPEND FMOD_DLL_PATHS "${dir}/${dll}")
+    endforeach()
+endforeach()
+
+# FMOD_DLL_PATHS contains full paths to all DLLs
+add_custom_target(FMOD_Copy_DLLs ALL
+    COMMENT "Copying FMOD DLLs to runtime directory"
+)
+
+# Copy each FMOD DLL 
+foreach(dll IN LISTS FMOD_DLL_PATHS)
+    if(EXISTS "${dll}")
+        add_custom_command(TARGET FMOD_Copy_DLLs POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${dll}"
+                "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+            COMMENT "Copying FMOD DLL ${dll} to runtime directory"
+        )
+    else()
+        message(WARNING "FMOD DLL not found: ${dll}")
+    endif()
+endforeach()
+
+add_dependencies(fmod FMOD_Copy_DLLs)

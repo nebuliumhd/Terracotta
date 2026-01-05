@@ -1,99 +1,249 @@
 #include "spdlog/spdlog.h"
+// Warning: Do not add more than one stb_vorbis.c include (if so use the #define above)
+#define STB_VORBIS_HEADER_ONLY
+#include "stb/stb_vorbis.c"
 #include "AudioSystem.hpp"
-
-static void ERRCHECK_fn(FMOD_RESULT result, const char* file, int line)
-{
-	if (result != FMOD_OK) {
-		SPDLOG_ERROR("FMOD Error on Line {}, Code: {}", line, static_cast<int>(result));
-	}
-}
-#define ERRCHECK(_result) ERRCHECK_fn(_result, __FILE__, __LINE__);
 
 namespace TerracottaEngine
 {
 AudioSystem::AudioSystem(SubsystemManager& manager) : Subsystem(manager)
 {
-	m_channelGroups.fill(nullptr);
-	Init(); // Remember to call this!
+	// Init should be called when we register the subsystem
 }
 AudioSystem::~AudioSystem()
 {
 	Shutdown();
 }
 
+bool AudioSystem::checkALError(const std::string& context)
+{
+	ALenum error = alGetError();
+	if (error == AL_NO_ERROR)
+		return false;
+
+	const char* errorMsg = "Unknown";
+	switch (error)
+	{
+	case AL_INVALID_NAME:      errorMsg = "AL_INVALID_NAME"; break;
+	case AL_INVALID_ENUM:      errorMsg = "AL_INVALID_ENUM"; break;
+	case AL_INVALID_VALUE:     errorMsg = "AL_INVALID_VALUE"; break;
+	case AL_INVALID_OPERATION: errorMsg = "AL_INVALID_OPERATION"; break;
+	case AL_OUT_OF_MEMORY:     errorMsg = "AL_OUT_OF_MEMORY"; break;
+	}
+
+	SPDLOG_ERROR("OpenAL error in {}: {}", context, errorMsg);
+	return true;
+}
+
 bool AudioSystem::Init()
 {
-	SPDLOG_INFO("Initializing the audio system...");
-	// Creates BOTH the studio and core
-	ERRCHECK(FMOD::Studio::System::create(&m_studioSystem));
-	ERRCHECK(m_studioSystem->getCoreSystem(&m_coreSystem));
-	ERRCHECK(m_coreSystem->setSoftwareFormat(48000, FMOD_SPEAKERMODE_STEREO, 0));
-	// Do 3D settings later
-	ERRCHECK(m_studioSystem->initialize(1024, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, nullptr));
+	SPDLOG_INFO("Initializing the audio system (OpenAL Soft v1.25.0)...");
 
-	// Add channel groups
-	FMOD::ChannelGroup* master, * sfx, * music;
-	ERRCHECK(m_coreSystem->getMasterChannelGroup(&master));
-	ERRCHECK(m_coreSystem->createChannelGroup("SFX", &sfx));
-	ERRCHECK(m_coreSystem->createChannelGroup("Music", &music));
-	m_channelGroups[(uint32_t)ChannelGroupID::Master] = master;
-	m_channelGroups[(uint32_t)ChannelGroupID::SFX] = sfx;
-	m_channelGroups[(uint32_t)ChannelGroupID::Music] = music;
+	m_alcDevice = alcOpenDevice(nullptr);
+	if (!m_alcDevice) {
+		SPDLOG_ERROR("Failed find an OpenAL compatible device.");
+		return false;
+	}
 
+	m_alcContext = alcCreateContext(m_alcDevice, nullptr);
+    if (!m_alcContext) {
+		SPDLOG_ERROR("Failed to create OpenAL context.");
+		alcCloseDevice(m_alcDevice);
+        m_alcDevice = nullptr;
+        return false;
+	}
+	
+	if (!alcMakeContextCurrent(m_alcContext)) {
+        SPDLOG_ERROR("Failed to set OpenAL context.");
+        alcDestroyContext(m_alcContext);
+        alcCloseDevice(m_alcDevice);
+        m_alcContext = nullptr;
+        m_alcDevice = nullptr;
+        return false;
+    }
+
+	// TODO: Check if we have basic DSP
+
+	// Set listener defaults
+	alListener3f(AL_POSITION, 0.0f, 0.0f, 0.0f);
+    alListener3f(AL_VELOCITY, 0.0f, 0.0f, 0.0f);
+    ALfloat listenerOri[] = { 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f };
+    alListenerfv(AL_ORIENTATION, listenerOri);
+
+	if (checkALError("Init")) {
+        return false;
+    }
+
+	SPDLOG_INFO("OpenAL Settings - Vendor: {} - Renderer: {} - Version: {}", alGetString(AL_VENDOR), alGetString(AL_RENDERER), alGetString(AL_VERSION));
 	SPDLOG_INFO("Finished initializing the audio system.");
 	return true;
 }
 void AudioSystem::OnUpdate(const float deltaTime)
 {
-	ERRCHECK(m_studioSystem->update());
+	
 }
 void AudioSystem::Shutdown()
 {
-	ERRCHECK(m_studioSystem->unloadAll());
-	ERRCHECK(m_studioSystem->release());
-}
-
-UUIDv4::UUID AudioSystem::LoadAudio(const char* audioFilePath)
-{
-	UUIDv4::UUID uuid;
-	if (!m_soundStringToUUID.contains(audioFilePath)) {
-		FMOD::Sound* sound;
-		ERRCHECK(m_coreSystem->createSound(audioFilePath, FMOD_DEFAULT, nullptr, &sound));
-		uuid = m_uuidGenerator.getUUID();
-		m_soundStringToUUID[audioFilePath] = uuid;
-		m_soundUUIDToFMOD[uuid] = sound;
-		return uuid;
-	} else {
-		SPDLOG_WARN("The audio file at \"{}\" is already loaded!", audioFilePath);
-		uuid = m_soundStringToUUID[audioFilePath];
+	for (auto& pair : m_audio) {
+		alDeleteBuffers(1, &pair.second);
 	}
-	return uuid;
-}
-void AudioSystem::PlayAudio(UUIDv4::UUID soundID, ChannelGroupID channelGroup)
-{
-	FMOD::Sound* sound = m_soundUUIDToFMOD[soundID];
-	if (!sound) {
-		SPDLOG_ERROR("Cannot play audio that has not been loaded!");
-		return;
+	m_audio.clear();
+
+	if (m_alcContext) {
+		alcMakeContextCurrent(nullptr);
+		alcDestroyContext(m_alcContext);
+		m_alcContext = nullptr;
+	}
+	if (m_alcDevice) {
+		alcCloseDevice(m_alcDevice);
+		m_alcDevice = nullptr;
 	}
 
-	// TODO: Save channel in the future?
-	FMOD::Channel* channel;
-	ERRCHECK(m_coreSystem->playSound(sound, m_channelGroups[(uint32_t)channelGroup], false, &channel));
+	SPDLOG_INFO("AudioSystem shutdown complete.");
 }
-void AudioSystem::UnloadAudio(const char* audioFilePath)
+
+
+ALuint AudioSystem::LoadAudio(const std::filesystem::path& oggPath)
 {
-	auto uuidIt = m_soundStringToUUID.find(audioFilePath);
-	if (uuidIt != m_soundStringToUUID.end()) {
-		UUIDv4::UUID uuid = uuidIt->second;
-		auto soundIt = m_soundUUIDToFMOD.find(uuid);
-		if (soundIt != m_soundUUIDToFMOD.end()) {
-			soundIt->second->release();
-			m_soundUUIDToFMOD.erase(soundIt);
-		}
-		m_soundStringToUUID.erase(uuidIt);
-	} else {
-		SPDLOG_WARN("The audio file at \"{}\" is not loaded!", audioFilePath);
+	std::string pathStr = oggPath.string();
+	auto it = m_audio.find(pathStr);
+    if (it != m_audio.end()) {
+        SPDLOG_WARN("Audio already loaded: \"{}\"", pathStr);
+        return it->second;
+    }
+	
+	if (!std::filesystem::exists(oggPath)) {
+		SPDLOG_ERROR("File does not exist: \"{}\"", pathStr);
+		return 0;
 	}
+
+
+	int channels, sampleRate;
+	short* sampleData;
+	int totalSamples = stb_vorbis_decode_filename(pathStr.c_str(), &channels, &sampleRate, &sampleData);
+	if (totalSamples < 0) {
+		SPDLOG_ERROR("Failed to decode .ogg file \"{}\"", pathStr);
+		return 0;
+	}
+
+	ALenum format;
+	if (channels == 1) {
+		format = AL_FORMAT_MONO16;
+	} else if (channels == 2) {
+		format = AL_FORMAT_STEREO16;
+	} else {
+		SPDLOG_ERROR("Unsupported channel count: {}", channels);
+		free(sampleData);
+		return 0;
+	}
+
+	ALuint buffer = 0;
+	alGenBuffers(1, &buffer);
+	if (checkALError("alGenBuffers")) {
+		SPDLOG_ERROR("Failed to generate OpenAL sound buffer.");
+		free(sampleData);
+		return 0;
+	}
+
+	alBufferData(buffer, format, sampleData, totalSamples * channels * sizeof(short), sampleRate);
+	free(sampleData);
+	if (checkALError("alBufferData")) {
+		SPDLOG_ERROR("Failed to load data to OpenAL sound buffer.");
+		alDeleteBuffers(1, &buffer);
+		return 0;
+	}
+
+	m_audio[pathStr] = buffer;
+	
+	SPDLOG_INFO("Loaded .ogg file: \"{}\", channels: {}, sample rate: {}, total samples: {}, duration: {}",
+		pathStr, channels, sampleRate, totalSamples, (float)totalSamples / sampleRate);
+	return buffer;
+}
+void AudioSystem::UnloadAudio(ALuint buffer)
+{
+	if (buffer == 0)
+        return;
+
+    // Find and remove from cache
+    for (auto it = m_audio.begin(); it != m_audio.end(); it++) {
+        if (it->second == buffer) {
+            alDeleteBuffers(1, &buffer);
+            checkALError("UnloadAudio");
+            m_audio.erase(it);
+            SPDLOG_INFO("Unloaded audio buffer: {}", buffer);
+            return;
+        }
+    }
+
+    alDeleteBuffers(1, &buffer);
+    checkALError("UnloadAudio");
+}
+
+ALuint AudioSystem::CreateAudioSource(ALuint buffer)
+{
+	if (buffer == 0) {
+        SPDLOG_ERROR("Cannot create an audio source with an invalid buffer.");
+        return 0;
+    }
+
+    ALuint source;
+    alGenSources(1, &source);
+    if (checkALError("CreateAudioSource")) {
+        return 0;
+    }
+
+    // Attach buffer to source
+    alSourcei(source, AL_BUFFER, buffer);
+    // Set default source properties
+    alSourcef(source, AL_PITCH, 1.0f);
+    alSourcef(source, AL_GAIN, 1.0f);
+    alSource3f(source, AL_POSITION, 0.0f, 0.0f, 0.0f);
+    alSource3f(source, AL_VELOCITY, 0.0f, 0.0f, 0.0f);
+    alSourcei(source, AL_LOOPING, AL_FALSE);
+
+    if (checkALError("CreateAudioSource")) {
+        alDeleteSources(1, &source);
+        return 0;
+    }
+
+    return source;
+}
+void AudioSystem::DestroyAudioSource(ALuint source)
+{
+	if (source == 0)
+        return;
+
+    alDeleteSources(1, &source);
+    checkALError("DestroyAudioSource");
+}
+
+void AudioSystem::PlayAudio(ALuint source) {
+     if (source == 0) {
+        SPDLOG_ERROR("Cannot play an invalid audio source.");
+        return;
+    }
+
+    alSourcePlay(source);
+    checkALError("PlayAudio");
+}
+void AudioSystem::PauseAudio(ALuint source)
+{
+	if (source == 0) {
+        SPDLOG_ERROR("Cannot pause an invalid audio source.");
+        return;
+    }
+
+    alSourcePause(source);
+    checkALError("PauseAudio");
+}
+void AudioSystem::StopAudio(ALuint source)
+{
+	if (source == 0) {
+        SPDLOG_ERROR("Cannot stop an invalid audio source.");
+        return;
+    }
+
+    alSourceStop(source);
+    checkALError("StopAudio");
 }
 }

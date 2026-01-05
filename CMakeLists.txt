@@ -14,6 +14,9 @@ set(GLFW_BUILD_SHARED_LIBS ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project("Terracotta")
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Check if we are using a multi-config generator (Visual Studio, Xcode)
 if(CMAKE_CONFIGURATION_TYPES)
@@ -47,7 +50,7 @@ add_subdirectory("TerracottaEngine/vendor/glm")
 add_subdirectory("TerracottaEngine/vendor/glad")
 add_subdirectory("TerracottaEngine/vendor/spdlog")
 add_subdirectory("TerracottaEngine/vendor/stb")
-add_subdirectory("TerracottaEngine/vendor/fmod")
+add_subdirectory("TerracottaEngine/vendor/openal-soft")
 
 # Build game first
 add_subdirectory("TerracottaGame")

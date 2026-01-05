@@ -1,23 +1,9 @@
 #pragma once
 
-#if defined(_WIN32)
-#include <Windows.h>
-#define DLL_HANDLE					HMODULE
-#define LOAD_DLL(path)				LoadLibraryA(path)
-#define UNLOAD_DLL(dll)				FreeLibrary(dll)
-#define GET_DLL_SYMBOL(dll, symbol) GetProcAddress(dll, symbol)
-#elif defined(__APPLE__) || defined(__linux__)
-#include <dlfcn.h>
-#define DLL_HANDLE					void*
-#define LOAD_DLL(path)				dlopen(path, RTLD_NOW)
-#define UNLOAD_DLL(dll)				dlclose(dll)
-#define GET_DLL_SYMBOL(dll, symbol) dlsym(dll, symbol)
-#else
-#error Unsupported platform. Must compile on a Windows, macOS, or Linux machine.
-#endif
-
 #include <vector>
 #include <memory>
+
+#include "PlatformDLL.hpp"
 #include "Subsystem.hpp"
 #include "Layers.hpp"
 #include "Window.hpp"

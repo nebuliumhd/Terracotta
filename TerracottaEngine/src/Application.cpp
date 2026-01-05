@@ -1,4 +1,6 @@
 // Hot reload for Unix operating systems
+
+#include <filesystem>
 #include <string>
 #include "spdlog/spdlog.h"
 #include "Application.hpp"
@@ -41,9 +43,12 @@ Application::Application(int windowWidth, int windowHeight)
 
 	m_audioSystem = std::make_unique<AudioSystem>(*m_subsystemManager);
 	m_subsystemManager->RegisterSubsystem(m_audioSystem.get());
+	
 	// Load the audio system in the future
-	UUIDv4::UUID songID = m_audioSystem->LoadAudio("../../../../../TerracottaEngine/res/audio.ogg");
-	m_audioSystem->PlayAudio(songID, ChannelGroupID::Master);
+	ALuint musicBuffer = m_audioSystem->LoadAudio("../../../../../TerracottaEngine/res/audio.ogg");
+	ALuint musicSource = m_audioSystem->CreateAudioSource(musicBuffer);
+	SPDLOG_INFO("Buffer: {}, Source: {}", musicBuffer, musicSource);
+	m_audioSystem->PlayAudio(musicSource);
 
 	m_renderer = std::make_unique<Renderer>(*m_subsystemManager, *m_window);
 	m_subsystemManager->RegisterSubsystem(m_renderer.get());
@@ -110,6 +115,11 @@ void Application::Stop()
 
 void Application::update(const float deltaTime)
 {
+	if (m_inputSystem->IsKeyPressed(GLFW_KEY_F5)) {
+		SPDLOG_INFO("Hot reloading game DLL...");
+		reloadGameDLL();
+	}
+
 	const std::vector<Subsystem*>& subsystems = m_subsystemManager->GetAllSubsystems();
 	for (Subsystem* sub : subsystems) {
 		sub->OnUpdate(deltaTime);
@@ -138,19 +148,19 @@ bool Application::loadGameDLL()
 	const char* dllName = "libgame.so";
 #endif
 
-	m_dllHandle = LOAD_DLL(dllName);
+	m_dllHandle = LoadDLL(dllName);
 	if (!m_dllHandle) {
 		SPDLOG_ERROR("Failed to get the handle for the game DLL! Make sure it's called game.dll/libgame.dylib/libgame.so");
 		return false;
 	}
 
-	m_gameAPI.Init = (GameInitFn)GET_DLL_SYMBOL(m_dllHandle, "GameInit");
-	m_gameAPI.Update = (GameUpdateFn)GET_DLL_SYMBOL(m_dllHandle, "GameUpdate");
-	m_gameAPI.Shutdown = (GameShutdownFn)GET_DLL_SYMBOL(m_dllHandle, "GameShutdown");
+	m_gameAPI.Init = (GameInitFn)GetDLLSymbol(m_dllHandle, "GameInit");
+	m_gameAPI.Update = (GameUpdateFn)GetDLLSymbol(m_dllHandle, "GameUpdate");
+	m_gameAPI.Shutdown = (GameShutdownFn)GetDLLSymbol(m_dllHandle, "GameShutdown");
 
 	if (!m_gameAPI.Init || !m_gameAPI.Update || !m_gameAPI.Shutdown) {
 		SPDLOG_ERROR("Failed to load one or more functions from the game DLL!");
-		UNLOAD_DLL(m_dllHandle);
+		UnloadDLL(m_dllHandle);
 		m_dllHandle = nullptr;
 		return false;
 	}
@@ -162,7 +172,7 @@ void Application::unloadGameDLL()
 	if (!m_dllHandle)
 		return;
 
-	UNLOAD_DLL(m_dllHandle);
+	UnloadDLL(m_dllHandle);
 	m_dllHandle = nullptr;
 
 	m_gameAPI.Init = nullptr;
@@ -175,7 +185,7 @@ void Application::reloadGameDLL()
 {
 	m_gameAPI.Shutdown(m_gameInstance);
 
-	UNLOAD_DLL(m_dllHandle);
+	UnloadDLL(m_dllHandle);
 
 	// Wait just so the OS can catch up with writing
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));

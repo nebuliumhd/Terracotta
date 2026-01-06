@@ -8,7 +8,7 @@ namespace TerracottaEngine
 EventSystem::EventSystem(SubsystemManager& manager) :
 	Subsystem(manager)
 {
-	SPDLOG_WARN("EventSystem constructed at address: {}", static_cast<void*>(this));
+	
 }
 EventSystem::~EventSystem()
 {
@@ -16,15 +16,17 @@ EventSystem::~EventSystem()
 }
 bool EventSystem::Init()
 {
+	SPDLOG_INFO("EventSystem initialization complete.");
 	return true;
 }
 void EventSystem::OnUpdate(const float deltaTime)
 {
-
+	
 }
 void EventSystem::Shutdown()
 {
 	// TODO: Perhaps remove the GLFW bindings?
+	SPDLOG_INFO("EventSystem shutdown complete.");
 }
 
 // TODO/WARNING: Might need to move the template functions into the header file!

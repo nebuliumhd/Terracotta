@@ -4,12 +4,11 @@
 #include <unordered_map>
 #include <typeindex>
 #include <type_traits>
-// #include "Application.hpp" Avoid using this header
+#include <memory>
 #include "Window.hpp"
 
 namespace TerracottaEngine
 {
-class Application;
 class SubsystemManager;
 
 class Subsystem
@@ -28,29 +27,49 @@ protected:
 class SubsystemManager
 {
 public:
-	SubsystemManager(Application& app);
+	SubsystemManager();
 	~SubsystemManager();
 
-	// Make sure you do NOT pass RAW pointers!!!
-	template <typename T>
-	void RegisterSubsystem(T* subsystem)
+	void Update(float deltaTime);
+
+	// TODO: Possibly add variadic arguments for subsystems that require them
+	template <typename T, typename... Args>
+	T* RegisterSubsystem(Args&&... args)
 	{
 		static_assert(std::is_base_of<Subsystem, T>::value, "T must be derived from the Subsystem class!");
-		m_subsystemsMap[typeid(T)] = subsystem;
-		m_subsystemOrder.push_back(subsystem);
-		subsystem->Init();
+
+		// Create the subsystem with whatever arguments it needs
+		auto subsystem = std::make_unique<T>(std::forward<Args>(args)...);
+		T* rawSubsystemPtr = subsystem.get();
+
+		// Store and init
+		m_subsystemsMap[typeid(T)] = std::move(subsystem);
+		m_subsystemOrder.push_back(rawSubsystemPtr);
+		rawSubsystemPtr->Init();
+
+		return rawSubsystemPtr;
 	}
 
 	template <typename T>
 	void UnregisterSubsystem(T* subsystem)
 	{
 		static_assert(std::is_base_of<Subsystem, T>::value, "T must be derived from the Subsystem class!");
-		m_subsystemsMap.erase(typeid(T));
 
-		auto it = std::find(m_subsystemOrder.begin(), m_subsystemOrder.end(), subsystem);
-		if (it != m_subsystemOrder.end()) {
-			it.second->Shutdown();
-			m_subsystemOrder.erase(it);
+		auto it = m_subsystemsMap.find(typeid(T));
+		if (it != m_subsystemsMap.end()) {
+			Subsystem* subsystem = it->second.get();
+
+			// Shutdown the subsystem before it's removal
+			subsystem->Shutdown();
+
+			// Remove from order vectors
+			auto orderIt = std::find(m_subsystemOrder.begin(), m_subsystemOrder.end(), subsystem);
+			if (orderIt != m_subsystemOrder.end()) {
+				m_subsystemOrder.erase(orderIt);
+			}
+
+			// Remove from map
+			m_subsystemsMap.erase(it);
 		}
 	}
 
@@ -59,7 +78,7 @@ public:
 	{
 		auto it = m_subsystemsMap.find(typeid(T));
 		if (it != m_subsystemsMap.end()) {
-			return static_cast<T*>(it->second);
+			return static_cast<T*>(it->second.get());
 		}
 		return nullptr;
 	}
@@ -68,7 +87,6 @@ public:
 private:
 	// Input, Audio, etc.
 	std::vector<Subsystem*> m_subsystemOrder;
-	std::unordered_map<std::type_index, Subsystem*> m_subsystemsMap;
-	Application& m_app;
+	std::unordered_map<std::type_index, std::unique_ptr<Subsystem>> m_subsystemsMap;
 };
 }

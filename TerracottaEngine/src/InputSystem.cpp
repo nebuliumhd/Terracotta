@@ -21,6 +21,7 @@ InputSystem::~InputSystem()
 bool InputSystem::Init()
 {
 	registerCallbacks();
+	SPDLOG_INFO("EventSystem initialization complete.");
 	return true;
 }
 void InputSystem::OnUpdate(const float deltaTime)
@@ -29,7 +30,7 @@ void InputSystem::OnUpdate(const float deltaTime)
 }
 void InputSystem::Shutdown()
 {
-
+	SPDLOG_INFO("InputSystem shutdown complete.");
 }
 
 void InputSystem::OnUpdateEnd()

@@ -34,18 +34,12 @@ Application::Application(int windowWidth, int windowHeight)
 	SPDLOG_INFO("m_maxFPS: {} at {}ms", m_maxFPS, m_targetFrameDelay);
 	SPDLOG_INFO("m_maxUPS: {} at {}ms", m_maxUPS, m_targetUpdateDelay);
 
-	// TODO: Avoid using the new keyword in the future
-	m_subsystemManager = std::make_unique<SubsystemManager>(*this);
-
-	m_eventSystem = std::make_unique<EventSystem>(*m_subsystemManager);
-	m_subsystemManager->RegisterSubsystem(m_eventSystem.get());
+	m_subsystemManager = std::make_unique<SubsystemManager>();
+	SubsystemManager& managerRef = *m_subsystemManager;
+	m_eventSystem = m_subsystemManager->RegisterSubsystem<EventSystem>(managerRef);
 	m_eventSystem->LinkToGLFWWindow(m_window->GetGLFWWindow());
-
-	m_inputSystem = std::make_unique<InputSystem>(*m_subsystemManager);
-	m_subsystemManager->RegisterSubsystem(m_inputSystem.get());
-
-	m_audioSystem = std::make_unique<AudioSystem>(*m_subsystemManager);
-	m_subsystemManager->RegisterSubsystem(m_audioSystem.get());
+	m_inputSystem = m_subsystemManager->RegisterSubsystem<InputSystem>(managerRef);
+	m_audioSystem = m_subsystemManager->RegisterSubsystem<AudioSystem>(managerRef);
 	
 	// Load the audio system in the future
 	ALuint musicBuffer = m_audioSystem->LoadAudio("../../../../../TerracottaEngine/res/audio.ogg");
@@ -53,9 +47,7 @@ Application::Application(int windowWidth, int windowHeight)
 	SPDLOG_INFO("Buffer: {}, Source: {}", musicBuffer, musicSource);
 	m_audioSystem->PlayAudio(musicSource);
 
-	m_renderer = std::make_unique<Renderer>(*m_subsystemManager, *m_window);
-	m_subsystemManager->RegisterSubsystem(m_renderer.get());
-
+	m_renderer = m_subsystemManager->RegisterSubsystem<Renderer>(managerRef, *m_window);
 	m_layers.PushLayer(new DearImGuiLayer(m_window->GetGLFWWindow(), "Main DearImGui Layer"));
 
 	// Game initialization
@@ -97,7 +89,6 @@ void Application::Run()
 	glfwPollEvents(); // Keep this tied to update for now
 
 	// Should update if enough time has elapsed (default = ~0.0167ms for 60 UPS)
-	// USE WHILE LOOP!!!
 	while (updateAcc >= m_targetUpdateDelay) {
 		update(deltaTime); // Update engine first before the game
 
@@ -142,10 +133,7 @@ void Application::update(const float deltaTime)
 		m_inputSystem->UnregisterCallbacks();
 	}
 
-	const std::vector<Subsystem*>& subsystems = m_subsystemManager->GetAllSubsystems();
-	for (Subsystem* sub : subsystems) {
-		sub->OnUpdate(deltaTime);
-	}
+	m_subsystemManager->Update(deltaTime);
 }
 void Application::render()
 {

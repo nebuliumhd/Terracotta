@@ -2,9 +2,13 @@
 
 #include <unordered_map>
 #include <filesystem>
-// TODO: Check if we need forward declaration
+// Use this #define so that we can statically link EXT
+#define AL_ALEXT_PROTOTYPES
 #include "AL/al.h"
 #include "AL/alc.h"
+#include "AL/alext.h"
+#include "AL/efx.h"
+#include "AL/efx-presets.h"
 
 #include "Subsystem.hpp"
 
@@ -30,6 +34,7 @@ public:
 private:
 	ALCcontext* m_alcContext = nullptr;
 	ALCdevice* m_alcDevice = nullptr;
+	ALuint m_effectSlot = 0; // Auxiliary effect slot
 	std::unordered_map<std::string, ALuint> m_audio;
 	bool checkALError(const std::string& context);
 };

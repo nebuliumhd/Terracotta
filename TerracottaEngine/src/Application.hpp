@@ -52,10 +52,12 @@ private:
 
 	// Subsystems
 	std::unique_ptr<SubsystemManager> m_subsystemManager = nullptr;
-	std::unique_ptr<InputSystem> m_inputSystem = nullptr;
-	std::unique_ptr<EventSystem> m_eventSystem = nullptr;
-	std::unique_ptr<AudioSystem> m_audioSystem = nullptr;
-	std::unique_ptr<Renderer> m_renderer = nullptr;
+	InputSystem* m_inputSystem = nullptr;
+	EventSystem* m_eventSystem = nullptr;
+	AudioSystem* m_audioSystem = nullptr;
+	Renderer* m_renderer = nullptr;
+
+	// Other systems
 	std::unique_ptr<Window> m_window = nullptr;
 
 	// Game

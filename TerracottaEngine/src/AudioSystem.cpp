@@ -15,26 +15,6 @@ AudioSystem::~AudioSystem()
 	// Shutdown() is automatically called by SubsystemManager
 }
 
-bool AudioSystem::checkALError(const std::string& context)
-{
-	ALenum error = alGetError();
-	if (error == AL_NO_ERROR)
-		return false;
-
-	const char* errorMsg = "Unknown";
-	switch (error)
-	{
-	case AL_INVALID_NAME:      errorMsg = "AL_INVALID_NAME"; break;
-	case AL_INVALID_ENUM:      errorMsg = "AL_INVALID_ENUM"; break;
-	case AL_INVALID_VALUE:     errorMsg = "AL_INVALID_VALUE"; break;
-	case AL_INVALID_OPERATION: errorMsg = "AL_INVALID_OPERATION"; break;
-	case AL_OUT_OF_MEMORY:     errorMsg = "AL_OUT_OF_MEMORY"; break;
-	}
-
-	SPDLOG_ERROR("OpenAL error in {}: {}", context, errorMsg);
-	return true;
-}
-
 bool AudioSystem::Init()
 {
 	SPDLOG_INFO("Initializing the audio system (OpenAL Soft v1.25.0)...");
@@ -74,8 +54,19 @@ bool AudioSystem::Init()
         return false;
     }
 
+	if (!alcIsExtensionPresent(m_alcDevice, "ALC_EXT_EFX")) {
+		SPDLOG_ERROR("WE DON'T HAVE DSP!!!");
+		return false;
+	}
+
+	alGenAuxiliaryEffectSlots(1, &m_effectSlot);
+	if (checkALError("Create effect slot")) {
+		SPDLOG_ERROR("Could not create a DSP effect for OpenAL.");
+		return false;
+	}
+
 	SPDLOG_INFO("OpenAL Settings - Vendor: {} - Renderer: {} - Version: {}", alGetString(AL_VENDOR), alGetString(AL_RENDERER), alGetString(AL_VERSION));
-	SPDLOG_INFO("Finished initializing the audio system.");
+	SPDLOG_INFO("AudioSystem initialization complete.");
 	return true;
 }
 void AudioSystem::OnUpdate(const float deltaTime)
@@ -84,6 +75,11 @@ void AudioSystem::OnUpdate(const float deltaTime)
 }
 void AudioSystem::Shutdown()
 {
+	if (m_effectSlot != 0) {
+		alDeleteAuxiliaryEffectSlots(1, &m_effectSlot);
+		m_effectSlot = 0;
+	}
+
 	for (auto& pair : m_audio) {
 		alDeleteBuffers(1, &pair.second);
 	}
@@ -102,6 +98,25 @@ void AudioSystem::Shutdown()
 	SPDLOG_INFO("AudioSystem shutdown complete.");
 }
 
+bool AudioSystem::checkALError(const std::string& context)
+{
+	ALenum error = alGetError();
+	if (error == AL_NO_ERROR)
+		return false;
+
+	const char* errorMsg = "Unknown";
+	switch (error)
+	{
+	case AL_INVALID_NAME:      errorMsg = "AL_INVALID_NAME"; break;
+	case AL_INVALID_ENUM:      errorMsg = "AL_INVALID_ENUM"; break;
+	case AL_INVALID_VALUE:     errorMsg = "AL_INVALID_VALUE"; break;
+	case AL_INVALID_OPERATION: errorMsg = "AL_INVALID_OPERATION"; break;
+	case AL_OUT_OF_MEMORY:     errorMsg = "AL_OUT_OF_MEMORY"; break;
+	}
+
+	SPDLOG_ERROR("OpenAL error in {}: {}", context, errorMsg);
+	return true;
+}
 
 ALuint AudioSystem::LoadAudio(const std::filesystem::path& oggPath)
 {
@@ -192,7 +207,7 @@ ALuint AudioSystem::CreateAudioSource(ALuint buffer)
         return 0;
     }
 
-    // Attach buffer to source
+    // Attach buffer to source (IMPORTANT!!!)
     alSourcei(source, AL_BUFFER, buffer);
     // Set default source properties
     alSourcef(source, AL_PITCH, 1.0f);
@@ -222,6 +237,17 @@ void AudioSystem::PlayAudio(ALuint source) {
         SPDLOG_ERROR("Cannot play an invalid audio source.");
         return;
     }
+
+	// Create effect
+	// ALuint effect = 0;
+	// alGenEffects(1, &effect);
+	// alEffecti(effect, AL_EFFECT_TYPE, AL_EFFECT_PITCH_SHIFTER);
+	// alEffectf(effect, AL_REVERB_DECAY_TIME, 2.0f);  // 2 second decay
+	// alEffectf(effect, AL_REVERB_DENSITY, 0.8f);      // etc.
+
+	// Apply effect to source
+	// alAuxiliaryEffectSloti(m_effectSlot, AL_EFFECTSLOT_EFFECT, effect);
+	// alSource3i(source, AL_AUXILIARY_SEND_FILTER, m_effectSlot, 0, AL_FILTER_NULL);
 
     alSourcePlay(source);
     checkALError("PlayAudio");

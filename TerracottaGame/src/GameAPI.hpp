@@ -17,6 +17,10 @@ extern "C" {
 	GAME_API GameHandle GameInit(TerracottaEngine::EngineAPI* engine);
 	GAME_API void GameUpdate(GameHandle game, float deltaTime);
 	GAME_API void GameShutdown(GameHandle game);
+
+	// Save game data
+	GAME_API void* GameSerializeState(GameHandle game, size_t* outSize);
+	GAME_API GameHandle GameDeserializeState(TerracottaEngine::EngineAPI* engine, void* data, size_t size);
 }
 
 class GameState
@@ -37,6 +41,11 @@ public:
 	void Exit() override;
 };
 
+struct GameData
+{
+	int ButtonPresses = 0;
+};
+
 class Game
 {
 public:
@@ -46,7 +55,13 @@ public:
 	void Init();
 	void Update(float deltaTime);
 	void Shutdown();
+
+	void PrintData();
+
+	GameData& GetGameData() { return m_data; }
+	void SetGameData(GameData data) { m_data = data; }
 private:
 	GameState* m_state = nullptr;
+	GameData m_data;
 };
 }

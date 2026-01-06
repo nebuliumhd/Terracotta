@@ -12,7 +12,7 @@ AudioSystem::AudioSystem(SubsystemManager& manager) : Subsystem(manager)
 }
 AudioSystem::~AudioSystem()
 {
-	Shutdown();
+	// Shutdown() is automatically called by SubsystemManager
 }
 
 bool AudioSystem::checkALError(const std::string& context)

@@ -2,8 +2,10 @@
 
 #include <vector>
 #include <memory>
+#include <string>
 
 #include "PlatformDLL.hpp"
+#include "EngineAPI.hpp"
 #include "Subsystem.hpp"
 #include "Layers.hpp"
 #include "Window.hpp"
@@ -11,19 +13,22 @@
 #include "EventSystem.hpp"
 #include "InputSystem.hpp"
 #include "AudioSystem.hpp"
-#include "EngineAPI.hpp"
 
 namespace TerracottaEngine
 {
 using GameInitFn = void*(*)(EngineAPI*);
 using GameUpdateFn = void(*)(void*, float);
 using GameShutdownFn = void(*)(void*);
+using GameSerializeStateFn = void*(*)(void*, size_t*);
+using GameDeserializeStateFn = void*(*)(EngineAPI*, void*, size_t);
 
 struct GameAPI
 {
 	GameInitFn Init = nullptr;
 	GameUpdateFn Update = nullptr;
 	GameShutdownFn Shutdown = nullptr;
+	GameSerializeStateFn SerializeState = nullptr;
+	GameDeserializeStateFn DeserializeState = nullptr;
 };
 
 class Application
@@ -38,7 +43,9 @@ public:
 	void Stop();
 	bool IsAppRunning() const { return m_running; }
 
+	// FOR THE ENGINE_API:
 	void Log(const char* msg) { SPDLOG_INFO("Hello from {}", msg); }
+	bool IsKeyStartPress(int key) { return m_inputSystem->IsKeyStartPress(key); }
 private:
 	void update(const float deltaTime);
 	void render();
@@ -53,13 +60,15 @@ private:
 
 	// Game
 	DLL_HANDLE m_dllHandle = nullptr;
+	std::string m_dllTempPath; // Path to temp copy (for cleanup)
 	GameAPI m_gameAPI;
 	EngineAPI m_engineAPI;
 	void* m_gameInstance = nullptr;
-	// Make sure to manually call the m_gameAPI.Init()
+	
 	bool loadGameDLL();
 	void unloadGameDLL();
 	void reloadGameDLL();
+	void cleanupOrphanedTempDLLs();
 
 	// Layers
 	LayerStack m_layers;

@@ -4,6 +4,7 @@
 #include <array>
 #include <vector>
 #include <functional>
+#include <algorithm>
 #include "spdlog/spdlog.h"
 #include "Subsystem.hpp"
 
@@ -13,13 +14,14 @@ template <> struct EventTypeTrait<EventStruct>                                  
 	{                                                                           \
 		static constexpr EnumType Type = EnumType::EnumValue;                   \
 	};                                                                          \
-    template <> inline auto& EventSystem::getVector<EventStruct>()              \
+    template <> inline auto& EventSystem::getArray<EventStruct>()               \
 	{                                                                           \
 		return EventVector;                                                     \
 	}
 
 namespace TerracottaEngine
 {
+// Forward declaration
 template <typename T> struct EventTypeTrait;
 
 enum class InputEventType : uint32_t
@@ -31,19 +33,6 @@ enum class InputEventType : uint32_t
 	MouseButtonPress,
 	NUM_INPUT_EVENTS // Last enum, don't touch/move relative to the other events
 };
-
-// All of these struct will contain the data for the receiving function to use
-//struct InputEvent
-//{
-//	int InputCode, Mods;
-//	InputEventType Action;
-//};
-//struct KeyInputEvent : InputEvent
-//{
-//	int Scancode;
-//};
-//struct MouseInputEvent : InputEvent
-//{};
 
 // Base event struct
 struct Event
@@ -83,36 +72,81 @@ public:
 	void LinkToGLFWWindow(GLFWwindow* glfwWindow);
 
 	template <typename T>
-	void AddListener(EventFunc<T> func)
+	uint64_t AddListener(EventFunc<T> func)
+	{
+		// We use ::Type since it's a static public member of the struct
+		constexpr uint32_t index = static_cast<uint32_t>(EventTypeTrait<T>::Type);
+		auto& listenerVector = getArray<T>()[index];
+		
+		// Generate unique ID for this listener
+		uint64_t id = m_nextListenerId++;
+		
+		// Create entry with ID and wrapped callback
+		ListenerEntry entry;
+		entry.ID = id;
+		entry.Callback = [func](const Event& e) {
+			func(static_cast<const T&>(e));
+		};
+		
+		listenerVector.push_back(std::move(entry));
+		return id;
+	}
+
+	template <typename T>
+	void RemoveListener(uint64_t handleID)
 	{
 		constexpr uint32_t index = static_cast<uint32_t>(EventTypeTrait<T>::Type);
-		auto& listenerVector = getVector<T>()[index];
-		listenerVector.push_back([func](const Event& e) {
-			func(static_cast<const T&>(e));
-		});
+		auto& listenerVector = getArray<T>()[index];
+
+		// SPDLOG_WARN("RemoveListener: Looking for ID {} in vector of size {}", handleID, listenerVector.size());
+		
+		// Find the listener by ID
+		auto it = std::find_if(listenerVector.begin(), listenerVector.end(),
+			[handleID](const ListenerEntry& entry) { 
+				// SPDLOG_WARN("  Checking entry with ID {}", entry.ID);
+				return entry.ID == handleID; 
+			});
+		
+		if (it != listenerVector.end()) {
+			// SPDLOG_WARN("\tFound it! Removing...");
+			*it = std::move(listenerVector.back());
+			listenerVector.pop_back();
+			// SPDLOG_WARN("\tRemoved. New size: {}", listenerVector.size());
+		} else {
+			// SPDLOG_ERROR("\tNOT FOUND!");
+		}
 	}
 
 	template <typename T>
 	void DispatchEvent(const T& event)
 	{
 		constexpr uint32_t index = static_cast<uint32_t>(EventTypeTrait<T>::Type);
-		auto& listenerVector = getVector<T>()[index];
-		for (auto& listener : listenerVector) {
-			listener(event);
+		auto& listenerVector = getArray<T>()[index];
+		
+		for (auto& entry : listenerVector) {
+			entry.Callback(event);
 		}
 	}
+
 private:
-	std::array<std::vector<InputEventFunc>, static_cast<size_t>(InputEventType::NUM_INPUT_EVENTS)> m_inputSubscribers;
+	struct ListenerEntry {
+		uint64_t ID;
+		InputEventFunc Callback;
+	};
+
+	std::array<std::vector<ListenerEntry>, static_cast<size_t>(InputEventType::NUM_INPUT_EVENTS)> m_inputSubscribers;
+	uint64_t m_nextListenerId = 1;
 
 	template <typename T>
-	auto& getVector()
+	auto& getArray()
 	{
-		SPDLOG_ERROR("There is no event std::vector hooked up to this");
-		return nullptr;
+		static_assert(sizeof(T) == 0, "Event type not registered! Use CONSTRUCT_EVENT_TEMPLATE macro.");
+		// This line never executes, but satisfies return type requirement
+		return m_inputSubscribers;
 	}
 };
 
-// TODO: Update these as more get added!
+// TODO: Update these as more get added (they are in the header so they are generated properly)!
 CONSTRUCT_EVENT_TEMPLATE(KeyReleaseEvent, InputEventType, KeyRelease, m_inputSubscribers);
 CONSTRUCT_EVENT_TEMPLATE(KeyPressEvent, InputEventType, KeyPress, m_inputSubscribers);
 CONSTRUCT_EVENT_TEMPLATE(KeyRepeatEvent, InputEventType, KeyRepeat, m_inputSubscribers);

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <unordered_map>
 #include <typeindex>
+#include <type_traits>
 // #include "Application.hpp" Avoid using this header
 #include "Window.hpp"
 
@@ -34,6 +35,7 @@ public:
 	template <typename T>
 	void RegisterSubsystem(T* subsystem)
 	{
+		static_assert(std::is_base_of<Subsystem, T>::value, "T must be derived from the Subsystem class!");
 		m_subsystemsMap[typeid(T)] = subsystem;
 		m_subsystemOrder.push_back(subsystem);
 		subsystem->Init();
@@ -42,6 +44,7 @@ public:
 	template <typename T>
 	void UnregisterSubsystem(T* subsystem)
 	{
+		static_assert(std::is_base_of<Subsystem, T>::value, "T must be derived from the Subsystem class!");
 		m_subsystemsMap.erase(typeid(T));
 
 		auto it = std::find(m_subsystemOrder.begin(), m_subsystemOrder.end(), subsystem);

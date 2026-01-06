@@ -26,14 +26,27 @@ public:
 	void OnUpdate(const float deltaTime) override;
 	void Shutdown() override;
 
-	bool IsKeyPressed(int key);
-	bool IsKeyRepeated(int key);
+	void OnUpdateEnd();
+
+	// Use GLFW keycodes for now
+	bool IsKeyStartPress(int key);
+	bool IsKeyEndPress(int key);
+	bool IsKeyRepeat(int key);
 	bool IsKeyDown(int key);
-	bool IsMouseButtonPressed(int mouse);
+	bool IsMouseButtonStartPress(int mouse);
+	bool IsMouseButtonEndPress(int mouse);
+	bool IsMouseButtonDown(int mouse);
+
+	void UnregisterCallbacks();
 private:
 	// NOTE MEDIA PLAYBACK KEYS AND OTHER STUFF WILL GO OUT OF BOUNDS!
-	std::array<InputState, GLFW_KEY_LAST - GLFW_KEY_SPACE + 1> m_keys;
-	std::array<InputState, GLFW_MOUSE_BUTTON_LAST + 1> m_mouse;
+	std::array<InputState, GLFW_KEY_LAST - GLFW_KEY_SPACE + 1> m_prevKeyInputs;
+	std::array<InputState, GLFW_KEY_LAST - GLFW_KEY_SPACE + 1> m_currKeyInputs;
+	std::array<InputState, GLFW_MOUSE_BUTTON_LAST + 1> m_prevMouseInputs;
+	std::array<InputState, GLFW_MOUSE_BUTTON_LAST + 1> m_currMouseInputs;
+	
+	// For debugging purposes!
+	uint64_t m_thatOneCallbackID = 0;
 
 	void registerCallbacks();
 };

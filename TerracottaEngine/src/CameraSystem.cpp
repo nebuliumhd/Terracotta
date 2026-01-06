@@ -43,7 +43,7 @@ void Camera::Update(const float deltaTime)
 		NeedsUpdate = true;
 	}
 
-	if (is->IsMouseButtonPressed(GLFW_MOUSE_BUTTON_1)) {
+	if (is->IsMouseButtonDown(GLFW_MOUSE_BUTTON_1)) {
 		// AudioSystem* as = m_managerRef.GetSubsystem<AudioSystem>();
 		// UUIDv4::UUID alarmID = as->LoadAudio("C:\\Windows\\Media\\Alarm05.wav");
 		// as->PlayAudio(alarmID, ChannelGroupID::Master);

@@ -8,12 +8,14 @@ namespace TerracottaEngine
 InputSystem::InputSystem(SubsystemManager& manager) :
 	Subsystem(manager)
 {
-	m_keys.fill(InputState::RELEASED);
-	m_mouse.fill(InputState::RELEASED);
+	m_currKeyInputs.fill(InputState::RELEASED);
+	m_prevKeyInputs = m_currKeyInputs;
+	m_currMouseInputs.fill(InputState::RELEASED);
+	m_prevMouseInputs = m_currMouseInputs;
 }
 InputSystem::~InputSystem()
 {
-	Shutdown();
+	
 }
 
 bool InputSystem::Init()
@@ -30,56 +32,63 @@ void InputSystem::Shutdown()
 
 }
 
+void InputSystem::OnUpdateEnd()
+{
+	m_prevKeyInputs = m_currKeyInputs;
+	m_prevMouseInputs = m_currMouseInputs;
+}
+
 void InputSystem::registerCallbacks()
 {
 	// TODO: Move to seperate member functions
 	EventSystem* es = m_manager.GetSubsystem<EventSystem>();
-	es->AddListener<KeyPressEvent>([this](const KeyPressEvent& e) { m_keys[KEY_INDEX(e.Keycode)] = InputState::PRESSED; });
-	es->AddListener<KeyRepeatEvent>([this](const KeyRepeatEvent& e) { m_keys[KEY_INDEX(e.Keycode)] = InputState::REPEATED; });
-	es->AddListener<KeyReleaseEvent>([this](const KeyReleaseEvent& e) { m_keys[KEY_INDEX(e.Keycode)] = InputState::RELEASED; });
-	es->AddListener<MouseButtonPressEvent>([this](const MouseButtonPressEvent& e) { m_mouse[e.Keycode] = InputState::PRESSED; });
-	es->AddListener<MouseButtonReleaseEvent>([this](const MouseButtonReleaseEvent& e) { m_mouse[e.Keycode] = InputState::RELEASED; });
+    SPDLOG_WARN("registerCallbacks: EventSystem address: {}", static_cast<void*>(es));
+	m_thatOneCallbackID = es->AddListener<KeyPressEvent>([this](const KeyPressEvent& e) { m_currKeyInputs[KEY_INDEX(e.Keycode)] = InputState::PRESSED; });
+	SPDLOG_WARN("m_thatOneCallback = {}", m_thatOneCallbackID);
+	es->AddListener<KeyRepeatEvent>([this](const KeyRepeatEvent& e) { m_currKeyInputs[KEY_INDEX(e.Keycode)] = InputState::REPEATED; });
+	es->AddListener<KeyReleaseEvent>([this](const KeyReleaseEvent& e) { m_currKeyInputs[KEY_INDEX(e.Keycode)] = InputState::RELEASED; });
+	es->AddListener<MouseButtonPressEvent>([this](const MouseButtonPressEvent& e) { m_currMouseInputs[e.Keycode] = InputState::PRESSED; });
+	es->AddListener<MouseButtonReleaseEvent>([this](const MouseButtonReleaseEvent& e) { m_currMouseInputs[e.Keycode] = InputState::RELEASED; });
 }
 
-bool InputSystem::IsKeyPressed(int key)
+void InputSystem::UnregisterCallbacks()
 {
-	return m_keys[KEY_INDEX(key)] == InputState::PRESSED;
+	SPDLOG_WARN("UnregisterCallbacks called!");
+    EventSystem* es = m_manager.GetSubsystem<EventSystem>();
+    SPDLOG_WARN("UnregisterCallbacks: EventSystem address: {}", static_cast<void*>(es));
+    es->RemoveListener<KeyPressEvent>(m_thatOneCallbackID);
+    SPDLOG_WARN("After RemoveListener call");
 }
-bool InputSystem::IsKeyRepeated(int key)
+
+bool InputSystem::IsKeyStartPress(int key)
 {
-	return m_keys[KEY_INDEX(key)] == InputState::REPEATED;
+	int keyIndex = KEY_INDEX(key);
+	return m_prevKeyInputs[keyIndex] != InputState::PRESSED && m_currKeyInputs[keyIndex] == InputState::PRESSED;
+}
+bool InputSystem::IsKeyEndPress(int key)
+{
+	int keyIndex = KEY_INDEX(key);
+	return m_prevKeyInputs[keyIndex] != InputState::RELEASED && m_currKeyInputs[keyIndex] == InputState::RELEASED;
+}
+bool InputSystem::IsKeyRepeat(int key)
+{
+	return m_currKeyInputs[KEY_INDEX(key)] == InputState::REPEATED;
 }
 bool InputSystem::IsKeyDown(int key)
 {
-	InputState state = m_keys[KEY_INDEX(key)];
+	InputState state = m_currKeyInputs[KEY_INDEX(key)];
 	return state == InputState::PRESSED || state == InputState::REPEATED;
 }
-bool InputSystem::IsMouseButtonPressed(int mouse)
+bool InputSystem::IsMouseButtonStartPress(int mouse)
 {
-	return m_mouse[mouse] == InputState::PRESSED;
+	return m_prevMouseInputs[mouse] != InputState::PRESSED && m_currMouseInputs[mouse] == InputState::PRESSED;
 }
-
-//void InputSystem::glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
-//{
-//	int index = key - GLFW_KEY_SPACE;
-//	switch (action) {
-//	case GLFW_REPEAT:
-//		m_keys[index] = InputState::REPEATED;
-//		break;
-//	case GLFW_PRESS:
-//		m_keys[index] = InputState::PRESSED;
-//		break;
-//	case GLFW_RELEASE:
-//	default:
-//		m_keys[index] = InputState::RELEASED;
-//	}
-//}
-//void InputSystem::glfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
-//{
-//	if (action == GLFW_PRESS) {
-//		m_mouse[button] = InputState::PRESSED;
-//	} else {
-//		m_mouse[button] = InputState::RELEASED;
-//	}
-//}
+bool InputSystem::IsMouseButtonEndPress(int mouse)
+{
+	return m_prevMouseInputs[mouse] != InputState::RELEASED && m_currMouseInputs[mouse] == InputState::RELEASED;
+}
+bool InputSystem::IsMouseButtonDown(int mouse)
+{
+	return m_currMouseInputs[mouse] == InputState::PRESSED || m_currMouseInputs[mouse] == InputState::REPEATED;
+}
 }

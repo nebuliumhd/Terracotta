@@ -1,7 +1,16 @@
 #pragma once
+#include <string>
 
-// Just declare the functions - implement them in a .cpp file
+namespace TerracottaEngine
+{
 using DLL_HANDLE = void*;
-DLL_HANDLE LoadDLL(const char* path);
-void UnloadDLL(DLL_HANDLE dll);
+
+struct DLLLoadResult {
+    DLL_HANDLE Handle;
+    std::string TempPath;
+};
+
 void* GetDLLSymbol(DLL_HANDLE dll, const char* symbol);
+DLLLoadResult LoadDLLForHotReload(const char* originalPath);
+void UnloadDLLAndCleanup(DLL_HANDLE dll, const std::string& tempPath);
+}

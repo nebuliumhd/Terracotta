@@ -8,11 +8,11 @@ namespace TerracottaEngine
 EventSystem::EventSystem(SubsystemManager& manager) :
 	Subsystem(manager)
 {
-
+	SPDLOG_WARN("EventSystem constructed at address: {}", static_cast<void*>(this));
 }
 EventSystem::~EventSystem()
 {
-	Shutdown();
+	
 }
 bool EventSystem::Init()
 {

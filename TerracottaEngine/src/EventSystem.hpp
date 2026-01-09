@@ -129,9 +129,10 @@ public:
 	}
 
 private:
-	struct ListenerEntry {
-		uint64_t ID;
-		InputEventFunc Callback;
+	struct ListenerEntry
+	{
+		uint64_t ID = 0;
+		InputEventFunc Callback = nullptr;
 	};
 
 	std::array<std::vector<ListenerEntry>, static_cast<size_t>(InputEventType::NUM_INPUT_EVENTS)> m_inputSubscribers;

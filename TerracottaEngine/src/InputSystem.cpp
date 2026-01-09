@@ -43,22 +43,13 @@ void InputSystem::registerCallbacks()
 {
 	// TODO: Move to seperate member functions
 	EventSystem* es = m_manager.GetSubsystem<EventSystem>();
-    SPDLOG_WARN("registerCallbacks: EventSystem address: {}", static_cast<void*>(es));
+	SPDLOG_WARN("registerCallbacks: EventSystem address: {}", static_cast<void*>(es));
 	m_thatOneCallbackID = es->AddListener<KeyPressEvent>([this](const KeyPressEvent& e) { m_currKeyInputs[KEY_INDEX(e.Keycode)] = InputState::PRESSED; });
 	SPDLOG_WARN("m_thatOneCallback = {}", m_thatOneCallbackID);
 	es->AddListener<KeyRepeatEvent>([this](const KeyRepeatEvent& e) { m_currKeyInputs[KEY_INDEX(e.Keycode)] = InputState::REPEATED; });
 	es->AddListener<KeyReleaseEvent>([this](const KeyReleaseEvent& e) { m_currKeyInputs[KEY_INDEX(e.Keycode)] = InputState::RELEASED; });
 	es->AddListener<MouseButtonPressEvent>([this](const MouseButtonPressEvent& e) { m_currMouseInputs[e.Keycode] = InputState::PRESSED; });
 	es->AddListener<MouseButtonReleaseEvent>([this](const MouseButtonReleaseEvent& e) { m_currMouseInputs[e.Keycode] = InputState::RELEASED; });
-}
-
-void InputSystem::UnregisterCallbacks()
-{
-	SPDLOG_WARN("UnregisterCallbacks called!");
-    EventSystem* es = m_manager.GetSubsystem<EventSystem>();
-    SPDLOG_WARN("UnregisterCallbacks: EventSystem address: {}", static_cast<void*>(es));
-    es->RemoveListener<KeyPressEvent>(m_thatOneCallbackID);
-    SPDLOG_WARN("After RemoveListener call");
 }
 
 bool InputSystem::IsKeyStartPress(int key)

@@ -5,13 +5,13 @@ namespace TerracottaGame
 {
 namespace TE = TerracottaEngine;
 // Game currently keeps track of one engine instance
-static TE::EngineAPI* s_engineAPI;
+static TE::EngineAPI* s_engine;
 
 // Game engine API
 GameHandle GameInit(TE::EngineAPI* engine)
 {
 	Game* game = new Game();
-	s_engineAPI = engine;
+	s_engine = engine;
 	game->Init();
 	return game;
 }
@@ -22,7 +22,7 @@ void GameUpdate(GameHandle game, float deltaTime)
 void GameShutdown(GameHandle game)
 {
 	reinterpret_cast<Game*>(game)->Shutdown();
-	s_engineAPI = nullptr;
+	s_engine = nullptr;
 }
 void* GameSerializeState(GameHandle game, size_t* outSize)
 {
@@ -46,7 +46,7 @@ void* GameSerializeState(GameHandle game, size_t* outSize)
 GameHandle GameDeserializeState(TE::EngineAPI* engine, void* data, size_t size)
 {
 	Game* game = new Game();
-	s_engineAPI = engine;
+	s_engine = engine;
 
 	// Deserialize state from buffer into the game object
 	GameData* savedData = reinterpret_cast<GameData*>(data);
@@ -88,7 +88,7 @@ void Game::Init()
 }
 void Game::Update(float deltaTime)
 {
-	if (s_engineAPI->IsKeyStartPress(s_engineAPI->Instance, 81 /*GLFW_KEY_Q*/)) {
+	if (s_engine->IsKeyStartPress(81 /*GLFW_KEY_Q*/)) {
 		m_data.ButtonPresses++;
 		PrintData();
 	}

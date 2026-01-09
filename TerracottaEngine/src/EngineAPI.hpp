@@ -1,15 +1,12 @@
 #pragma once
 
-using EngineHandle = void*;
-using LogFn = void(*)(EngineHandle, const char*);
-using IsKeyStartPressFn = bool(*)(EngineHandle, int);
+using LogFn = void(*)(const char*);
+using IsKeyStartPressFn = bool(*)(int);
 
 namespace TerracottaEngine
 {
 struct EngineAPI
 {
-	EngineHandle Instance;
-
 	LogFn Log;
 	IsKeyStartPressFn IsKeyStartPress;
 };

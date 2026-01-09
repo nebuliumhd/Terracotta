@@ -36,8 +36,6 @@ public:
 	bool IsMouseButtonStartPress(int mouse);
 	bool IsMouseButtonEndPress(int mouse);
 	bool IsMouseButtonDown(int mouse);
-
-	void UnregisterCallbacks();
 private:
 	// NOTE MEDIA PLAYBACK KEYS AND OTHER STUFF WILL GO OUT OF BOUNDS!
 	std::array<InputState, GLFW_KEY_LAST - GLFW_KEY_SPACE + 1> m_prevKeyInputs;

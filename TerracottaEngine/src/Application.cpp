@@ -10,20 +10,24 @@
 
 namespace TerracottaEngine
 {
+static Application* g_appInstance = nullptr;
+
 // TODO: Move these down below and use function prototypes
-static void Log(EngineHandle inst, const char* msg)
+static void Log(const char* msg)
 {
-	reinterpret_cast<Application*>(inst)->Log(msg);
+	g_appInstance->Log(msg);
 }
-static bool IsKeyStartPress(EngineHandle inst, int key)
+static bool IsKeyStartPress(int key)
 {
-	return reinterpret_cast<Application*>(inst)->IsKeyStartPress(key);
+	return g_appInstance->IsKeyStartPress(key);
 }
 
 Application::Application(int windowWidth, int windowHeight)
 {
 	// Logging
 	SPDLOG_INFO("Creating application...");
+
+	g_appInstance = this;
 
 	// Initialize other important systems
 	m_window = std::make_unique<Window>(windowWidth, windowHeight);
@@ -42,10 +46,7 @@ Application::Application(int windowWidth, int windowHeight)
 	m_audioSystem = m_subsystemManager->RegisterSubsystem<AudioSystem>(managerRef);
 	
 	// Load the audio system in the future
-	ALuint musicBuffer = m_audioSystem->LoadAudio("../../../../../TerracottaEngine/res/audio.ogg");
-	ALuint musicSource = m_audioSystem->CreateAudioSource(musicBuffer);
-	SPDLOG_INFO("Buffer: {}, Source: {}", musicBuffer, musicSource);
-	m_audioSystem->PlayAudio(musicSource);
+	// m_audioSystem->PlayAudio("../../../../../TerracottaEngine/res/audio.ogg");
 
 	m_renderer = m_subsystemManager->RegisterSubsystem<Renderer>(managerRef, *m_window);
 	m_layers.PushLayer(new DearImGuiLayer(m_window->GetGLFWWindow(), "Main DearImGui Layer"));
@@ -56,7 +57,6 @@ Application::Application(int windowWidth, int windowHeight)
 	}
 
 	m_engineAPI = EngineAPI{
-		this,
 		&TerracottaEngine::Log,
 		&TerracottaEngine::IsKeyStartPress
 	};
@@ -68,6 +68,8 @@ Application::Application(int windowWidth, int windowHeight)
 Application::~Application()
 {
 	SPDLOG_INFO("Application destructor called - cleaning up...");
+	if (g_appInstance == this)
+		g_appInstance = nullptr;
 	// Ensure that we unload the game DLL and clear temp files
 	unloadGameDLL();
 	// Clean up any orphaned temp DLLs from previous runs
@@ -90,7 +92,7 @@ void Application::Run()
 
 	// Should update if enough time has elapsed (default = ~0.0167ms for 60 UPS)
 	while (updateAcc >= m_targetUpdateDelay) {
-		update(deltaTime); // Update engine first before the game
+		update(m_targetFrameDelay); // Update engine first before the game
 
 		if (m_gameInstance)
 			m_gameAPI.Update(m_gameInstance, deltaTime);
@@ -125,12 +127,18 @@ void Application::update(const float deltaTime)
 		SPDLOG_INFO("Hot reloading game DLL...");
 		reloadGameDLL();
 	}
-	if (m_inputSystem->IsKeyStartPress(GLFW_KEY_Q)) {
-		SPDLOG_INFO("I have inputs registered!");
-	}
-	if (m_inputSystem->IsKeyStartPress(GLFW_KEY_E)) {
-		SPDLOG_WARN("Unregistering ALL input system callbacks...");
-		m_inputSystem->UnregisterCallbacks();
+	if (m_inputSystem->IsKeyDown(GLFW_KEY_0)) {
+		m_audioSystem->PlayAudio("../../../../../TerracottaEngine/res/bass.ogg");
+		// SPDLOG_INFO("Played bass.ogg!");
+	} else if (m_inputSystem->IsKeyDown(GLFW_KEY_1)) {
+		m_audioSystem->PlayAudio("../../../../../TerracottaEngine/res/drumloop.ogg");
+		// SPDLOG_INFO("Played drumloop.ogg!");
+	} else if (m_inputSystem->IsKeyDown(GLFW_KEY_2)) {
+		m_audioSystem->PlayAudio("../../../../../TerracottaEngine/res/hit.ogg");
+		// SPDLOG_INFO("Played hit.ogg!");
+	} else if (m_inputSystem->IsKeyDown(GLFW_KEY_3)) {
+		m_audioSystem->PlayAudio("../../../../../TerracottaEngine/res/boing.ogg");
+		// SPDLOG_INFO("Played boing.ogg!");
 	}
 
 	m_subsystemManager->Update(deltaTime);

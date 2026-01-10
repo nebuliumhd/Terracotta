@@ -36,8 +36,13 @@ BufferObject::~BufferObject()
 	glDeleteBuffers(1, &m_id);
 }
 
-void BufferObject::BufferData(GLsizeiptr size, const void* data, GLenum usage)
+void BufferObject::BufferInitData(GLsizeiptr size, const void* data, GLenum usage)
 {
 	glBufferData(m_type, size, data, usage);
 }
+void BufferObject::BufferSubData(GLintptr offset, GLsizeiptr size, const void* data)
+{
+	glBufferSubData(m_type, offset, size, data);
+}
+
 }

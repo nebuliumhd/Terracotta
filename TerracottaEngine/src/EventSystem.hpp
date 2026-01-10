@@ -34,6 +34,18 @@ enum class InputEventType : uint32_t
 	NUM_INPUT_EVENTS // Last enum, don't touch/move relative to the other events
 };
 
+enum class WindowEventType : uint32_t
+{
+	WindowPosition,
+	WindowSize,
+	WindowClose,
+	WindowFocus,
+	WindowIconify,
+	WindowMaximize,
+	WindowContentScale,
+	NUM_WINDOW_EVENTS
+};
+
 // Base event struct
 struct Event
 {};
@@ -54,10 +66,41 @@ struct MouseButtonReleaseEvent : public InputEvent
 struct MouseButtonPressEvent : public InputEvent
 {};
 
+// Window events
+struct WindowEvent : public Event
+{};
+struct WindowPositionEvent : public WindowEvent
+{
+	int X, Y;
+};
+struct WindowSizeEvent : public WindowEvent
+{
+	int Width, Height;
+};
+struct WindowCloseEvent : public WindowEvent
+{};
+struct WindowFocusEvent : public WindowEvent
+{
+	bool Focused;
+};
+struct WindowIconifyEvent : public WindowEvent
+{
+	bool Iconified;
+};
+struct WindowMaximizeEvent : public WindowEvent
+{
+	bool Maximized;
+};
+struct WindowContentScaleEvent : public WindowEvent
+{
+	float XScale, YScale;
+};
+
 template <typename T>
 using EventFunc = std::function<void(const T&)>;
 using BaseEventFunc = std::function<void(const Event&)>;
 using InputEventFunc = std::function<void(const InputEvent&)>;
+using WindowEventFunc = std::function<void(const WindowEvent&)>;
 
 class EventSystem : public Subsystem
 {
@@ -132,10 +175,11 @@ private:
 	struct ListenerEntry
 	{
 		uint64_t ID = 0;
-		InputEventFunc Callback = nullptr;
+		BaseEventFunc Callback = nullptr;
 	};
 
 	std::array<std::vector<ListenerEntry>, static_cast<size_t>(InputEventType::NUM_INPUT_EVENTS)> m_inputSubscribers;
+	std::array<std::vector<ListenerEntry>, static_cast<size_t>(WindowEventType::NUM_WINDOW_EVENTS)> m_windowSubscribers;
 	uint64_t m_nextListenerId = 1;
 
 	template <typename T>
@@ -143,14 +187,26 @@ private:
 	{
 		static_assert(sizeof(T) == 0, "Event type not registered! Use CONSTRUCT_EVENT_TEMPLATE macro.");
 		// This line never executes, but satisfies return type requirement
-		return m_inputSubscribers;
+		assert(0 && "How did we get here?");
+		return nullptr;
 	}
 };
 
 // TODO: Update these as more get added (they are in the header so they are generated properly)!
+
+// Input Events
 CONSTRUCT_EVENT_TEMPLATE(KeyReleaseEvent, InputEventType, KeyRelease, m_inputSubscribers);
 CONSTRUCT_EVENT_TEMPLATE(KeyPressEvent, InputEventType, KeyPress, m_inputSubscribers);
 CONSTRUCT_EVENT_TEMPLATE(KeyRepeatEvent, InputEventType, KeyRepeat, m_inputSubscribers);
 CONSTRUCT_EVENT_TEMPLATE(MouseButtonReleaseEvent, InputEventType, MouseButtonRelease, m_inputSubscribers);
 CONSTRUCT_EVENT_TEMPLATE(MouseButtonPressEvent, InputEventType, MouseButtonPress, m_inputSubscribers);
+
+// Window Events
+CONSTRUCT_EVENT_TEMPLATE(WindowPositionEvent, WindowEventType, WindowPosition, m_windowSubscribers);
+CONSTRUCT_EVENT_TEMPLATE(WindowSizeEvent, WindowEventType, WindowSize, m_windowSubscribers);
+CONSTRUCT_EVENT_TEMPLATE(WindowCloseEvent, WindowEventType, WindowClose, m_windowSubscribers);
+CONSTRUCT_EVENT_TEMPLATE(WindowFocusEvent, WindowEventType, WindowFocus, m_windowSubscribers);
+CONSTRUCT_EVENT_TEMPLATE(WindowIconifyEvent, WindowEventType, WindowIconify, m_windowSubscribers);
+CONSTRUCT_EVENT_TEMPLATE(WindowMaximizeEvent, WindowEventType, WindowMaximize, m_windowSubscribers);
+CONSTRUCT_EVENT_TEMPLATE(WindowContentScaleEvent, WindowEventType, WindowContentScale, m_windowSubscribers);
 }

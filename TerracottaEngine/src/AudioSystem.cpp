@@ -179,8 +179,7 @@ bool AudioSystem::checkALError(const std::string& context)
 		return false;
 
 	const char* errorMsg = "Unknown";
-	switch (error)
-	{
+	switch (error) {
 	case AL_INVALID_NAME:      errorMsg = "AL_INVALID_NAME"; break;
 	case AL_INVALID_ENUM:      errorMsg = "AL_INVALID_ENUM"; break;
 	case AL_INVALID_VALUE:     errorMsg = "AL_INVALID_VALUE"; break;
@@ -227,8 +226,7 @@ AudioBufferHandle AudioSystem::LoadAudioToBuffer(const Filepath& oggPath)
 	buffer.SampleRate = sampleRate;
 	buffer.Duration = duration;
 
-	switch (channels)
-	{
+	switch (channels) {
 	case 1:
 		buffer.Format = AL_FORMAT_MONO16;
 		break;
@@ -325,8 +323,7 @@ AudioSourceHandle AudioSystem::CreateSource(AudioBufferHandle buffer, AudioType 
 
 	// TODO: Get settings for each of the different channels (have a global config or something)
 	uint32_t lastIndex;
-	switch (type)
-	{
+	switch (type) {
 	case AudioType::SFX:
 		m_sfxChannel.push_back(source);
 		lastIndex = static_cast<uint32_t>(m_sfxChannel.size() - 1);

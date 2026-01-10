@@ -98,6 +98,14 @@ void ShaderProgram::UploadUniformInt(const std::string& uniformName, GLint value
 	}
 	glUniform1i(location, value);
 }
+void ShaderProgram::UploadUniformIntArray(const std::string& uniformName, GLsizei count, const GLint* value)
+{
+	GLint location = glGetUniformLocation(m_id, uniformName.c_str());
+	if (location == -1) {
+		SPDLOG_ERROR("There is no int uniform called \"{}\" in the shader program.", uniformName);
+	}
+	glUniform1iv(location, count, value);
+}
 void ShaderProgram::UploadUniformMat4(const std::string& uniformName, const glm::mat4& matrix)
 {
 	GLint location = glGetUniformLocation(m_id, uniformName.c_str());

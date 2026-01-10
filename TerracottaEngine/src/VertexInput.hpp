@@ -1,9 +1,17 @@
 #pragma once
 #include "glad/glad.h"
+#include "glm/glm.hpp"
 
 // Contains VAO, VBO, EBO, etc.
 namespace TerracottaEngine
 {
+struct Vertex
+{
+	glm::vec3 Position;
+	glm::vec2 TextureCoord;
+	float TextureIndex;
+};
+
 class VertexArray
 {
 public:
@@ -25,7 +33,8 @@ public:
 	~BufferObject();
 
 	void Bind() const { glBindBuffer(m_type, m_id); }
-	void BufferData(GLsizeiptr size, const void* data, GLenum usage);
+	void BufferInitData(GLsizeiptr size, const void* data, GLenum usage);
+	void BufferSubData(GLintptr offset, GLsizeiptr size, const void* data);
 private:
 	GLuint m_id = 0;
 	GLenum m_type;

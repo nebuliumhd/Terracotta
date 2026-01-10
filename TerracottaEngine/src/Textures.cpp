@@ -4,25 +4,26 @@
 
 namespace TerracottaEngine
 {
-Texture::Texture(const std::string& texturePath) :
+Texture::Texture(const Filepath& texturePath) :
 	m_dimensions(glm::vec2(0.0f))
 {
+	std::string textureStr = texturePath.string();
 	if (!std::filesystem::exists(texturePath)) {
-		SPDLOG_INFO("The texture file {} does not exist.", texturePath);
+		SPDLOG_INFO("The texture file {} does not exist.", textureStr);
 		return;
 	}
 
 	int imgWidth, imgHeight, numChannels;
 	stbi_set_flip_vertically_on_load(true);
-	unsigned char* imgData = stbi_load(texturePath.c_str(), &imgWidth, &imgHeight, &numChannels, 0);
+	unsigned char* imgData = stbi_load(textureStr.c_str(), &imgWidth, &imgHeight, &numChannels, 0);
 
 	if (!imgData) {
-		SPDLOG_ERROR("Failed to load texture file at \"{}\".", texturePath);
+		SPDLOG_ERROR("Failed to load texture file at \"{}\".", textureStr);
 		return;
 	}
 
 	m_dimensions = glm::vec2((float)imgWidth, (float)imgHeight);
-	SPDLOG_INFO("Loaded texture file at {} of {{{} x {}}} with {} color channels.", texturePath, m_dimensions.x, m_dimensions.y, numChannels);
+	SPDLOG_INFO("Loaded texture file at {} of {{{} x {}}} with {} color channels.", textureStr, m_dimensions.x, m_dimensions.y, numChannels);
 
 	// Upload image to OpenGL and free resources
 	glGenTextures(1, &m_id);
@@ -42,13 +43,27 @@ Texture::~Texture()
 	glDeleteTextures(1, &m_id);
 }
 
-TextureAtlas::TextureAtlas(const std::string& atlas) :
-	m_atlas(atlas)
-{
-
-}
+TextureAtlas::TextureAtlas(const Filepath& atlasPath, int rows, int columns) :
+	m_atlas(atlasPath), m_rows(rows), m_columns(columns), m_tileWidth(1.0f / static_cast<float>(columns)), m_tileHeight(1.0f / static_cast<float>(rows))
+{}
 TextureAtlas::~TextureAtlas()
-{
+{}
 
+glm::vec4 TextureAtlas::GetTileUVs(int tileId) const
+{
+	if (tileId < 0 || tileId >= GetTileCount()) {
+		SPDLOG_WARN("Invalid tile ID: {}", tileId);
+		return glm::vec4(0.0f, 0.0f, 1.0f, 1.0f); // Full texture default
+	}
+
+	int row = tileId / m_columns;
+	int column = tileId % m_columns;
+
+	float minU = column * m_tileWidth;
+	float minV = row * m_tileHeight;
+	float maxU = minU + m_tileWidth;
+	float maxV = minV + m_tileHeight;
+
+	return glm::vec4(minU, minV, maxU, maxV);
 }
 }

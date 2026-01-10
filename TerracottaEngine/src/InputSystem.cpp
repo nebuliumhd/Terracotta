@@ -43,9 +43,7 @@ void InputSystem::registerCallbacks()
 {
 	// TODO: Move to seperate member functions
 	EventSystem* es = m_manager.GetSubsystem<EventSystem>();
-	SPDLOG_WARN("registerCallbacks: EventSystem address: {}", static_cast<void*>(es));
-	m_thatOneCallbackID = es->AddListener<KeyPressEvent>([this](const KeyPressEvent& e) { m_currKeyInputs[KEY_INDEX(e.Keycode)] = InputState::PRESSED; });
-	SPDLOG_WARN("m_thatOneCallback = {}", m_thatOneCallbackID);
+	es->AddListener<KeyPressEvent>([this](const KeyPressEvent& e) { m_currKeyInputs[KEY_INDEX(e.Keycode)] = InputState::PRESSED; });
 	es->AddListener<KeyRepeatEvent>([this](const KeyRepeatEvent& e) { m_currKeyInputs[KEY_INDEX(e.Keycode)] = InputState::REPEATED; });
 	es->AddListener<KeyReleaseEvent>([this](const KeyReleaseEvent& e) { m_currKeyInputs[KEY_INDEX(e.Keycode)] = InputState::RELEASED; });
 	es->AddListener<MouseButtonPressEvent>([this](const MouseButtonPressEvent& e) { m_currMouseInputs[e.Keycode] = InputState::PRESSED; });

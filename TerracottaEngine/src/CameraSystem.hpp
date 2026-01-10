@@ -8,7 +8,7 @@ namespace TerracottaEngine
 class Camera
 {
 public:
-	Camera(SubsystemManager& manager);
+	Camera(SubsystemManager& manager, Window& window);
 	~Camera();
 
 	bool NeedsUpdate = true;
@@ -24,7 +24,13 @@ private:
 	static constexpr float MIN_ZOOM = 0.5f;
 	float m_zoom = 1.0f;
 	float m_moveSpeed = 1.0f;
+	float m_aspect;
+	float m_tilesInHeight;
 
 	SubsystemManager& m_managerRef;
+	Window* m_window;
+
+	void updateProjection();
+	void registerCallbacks();
 };
 }

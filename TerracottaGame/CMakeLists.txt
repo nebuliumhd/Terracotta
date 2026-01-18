@@ -38,4 +38,5 @@ target_include_directories(game
 	PRIVATE 
 		${ENGINE_INC} # TerracottaEngine
 		${CMAKE_SOURCE_DIR}/TerracottaEngine/vendor/spdlog/include
+        ${CMAKE_SOURCE_DIR}/TerracottaEngine/vendor/glm
 )

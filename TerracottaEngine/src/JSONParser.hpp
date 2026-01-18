@@ -6,6 +6,7 @@
 #include <vector>
 #include "nlohmann/json.hpp"
 #include "glm/glm.hpp"
+#include "SharedDataTypes.h"
 
 namespace TerracottaEngine
 {
@@ -18,18 +19,18 @@ struct TilemapData
 	int Width, Height;
 	Filepath AtlasPath;
 	int AtlasRows, AtlasColumns;
-	std::vector<uint32_t> Tiles;
+	std::vector<uint32_t> Tiles = {0};
 };
 
+// Can either be created with a json state or used as a temp object
 class JSONParser
 {
 public:
-	JSONParser();
-	~JSONParser();
-
-	TilemapData LoadTilemapFromFile(const Filepath& path);
-	void SaveTilemapToFile(const TilemapData& tilepath, const Filepath& path);
+	static AtlasInfo LoadAtlasInfo(const Filepath& path);
+	static TilemapData LoadTilemapFromFile(const Filepath& path);
+	static void SaveTilemapToFile(const TilemapData& tilepath, const Filepath& path);
 private:
-	json m_data;
+	JSONParser() = delete;
+	~JSONParser() = delete;
 };
-}
+} // namespace TerracottaEngine

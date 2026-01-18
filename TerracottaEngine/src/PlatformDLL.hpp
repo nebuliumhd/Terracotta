@@ -13,4 +13,4 @@ struct DLLLoadResult {
 void* GetDLLSymbol(DLL_HANDLE dll, const char* symbol);
 DLLLoadResult LoadDLLForHotReload(const char* originalPath);
 void UnloadDLLAndCleanup(DLL_HANDLE dll, const std::string& tempPath);
-}
+} // namespace TerracottaEngine

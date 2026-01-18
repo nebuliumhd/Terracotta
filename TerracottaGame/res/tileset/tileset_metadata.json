@@ -1,0 +1,8 @@
+{
+	"tiles01.png" : {
+		"tile_width": 32,
+		"tile_height": 32,
+		"rows": 16,
+		"columns": 16
+	}
+}

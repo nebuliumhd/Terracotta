@@ -27,59 +27,36 @@ bool Renderer::Init()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	// Init Renderer2D
-	m_renderer2D.VBOBase = new Vertex[Renderer2D::MAX_VERTICES]; // Use std::unique_ptr?
-	m_renderer2D.VBOPtr = &m_renderer2D.VBOBase[0];
-	m_renderer2D.EBOData = new uint32_t[Renderer2D::MAX_INDICES];
-	uint32_t offset = 0;
-	for (uint32_t i = 0; i < Renderer2D::MAX_INDICES; i += 6) {
-		m_renderer2D.EBOData[i] = offset;
-		m_renderer2D.EBOData[i + 1] = offset + 1;
-		m_renderer2D.EBOData[i + 2] = offset + 2;
-		m_renderer2D.EBOData[i + 3] = offset + 2;
-		m_renderer2D.EBOData[i + 4] = offset + 3;
-		m_renderer2D.EBOData[i + 5] = offset;
-		offset += 4;
-	}
-
+	// Create shader
 	m_renderer2D.Shader = std::make_unique<ShaderProgram>();
 	m_renderer2D.Shader->InitializeShaderProgram("../../../../../TerracottaEngine/res/DefaultVert.glsl", "../../../../../TerracottaEngine/res/DefaultFrag.glsl");
 
-	// For vertex shader
-	m_renderer2D.Shader->UploadUniformMat4("u_view", m_camera.View);
-	m_renderer2D.Shader->UploadUniformMat4("u_projection", m_camera.Projection);
-
-	// For fragment shader
+	// Set up texture samplers
 	int samplers[Renderer2D::MAX_TEXTURES];
 	for (int i = 0; i < Renderer2D::MAX_TEXTURES; i++) {
 		samplers[i] = i;
 	}
+
+	m_renderer2D.Shader->Use();
 	m_renderer2D.Shader->UploadUniformIntArray("u_textures", Renderer2D::MAX_TEXTURES, samplers);
 
+	// Initialize camera matrices
+	m_renderer2D.Shader->UploadUniformMat4("u_view", m_camera.View);
+	m_renderer2D.Shader->UploadUniformMat4("u_projection", m_camera.Projection);
+
+	// Initialize texture slot 0 with debug texture (for testing)
+	for (uint32_t i = 0; i < Renderer2D::MAX_TEXTURES; i++) {
+		m_renderer2D.AtlasSlots[i] = nullptr;
+	}
 	m_renderer2D.TextureSlotIndex = 0;
 	m_renderer2D.TextureSlots[0] = std::make_unique<Texture>("../../../../../TerracottaEngine/res/DebugTexture.jpg");
-	glActiveTexture(GL_TEXTURE0);
-	m_renderer2D.TextureSlots[0]->Bind();
 	m_renderer2D.TextureSlotIndex = 1;
 
-	m_renderer2D.VAO = std::make_unique<VertexArray>();
-	m_renderer2D.VBO = std::make_unique<BufferObject>(GL_ARRAY_BUFFER);
-
-	TilemapData data = m_parser.LoadTilemapFromFile("C:\\Users\\garla\\source\\repos\\Terracotta\\TerracottaGame\\res\\maps\\default_map\\DefaultMap.json");
-	DrawTilemapData(data);
-	m_renderer2D.VBO->BufferInitData(Renderer2D::MAX_VERTICES * sizeof(Vertex), nullptr, GL_STATIC_DRAW);
-	m_renderer2D.VBO->BufferSubData(0, m_renderer2D.VertexCount * sizeof(Vertex), m_renderer2D.VBOBase);
-	m_renderer2D.EBO = std::make_unique<BufferObject>(GL_ELEMENT_ARRAY_BUFFER);
-	m_renderer2D.EBO->BufferInitData(Renderer2D::MAX_INDICES * sizeof(uint32_t), m_renderer2D.EBOData, GL_STATIC_DRAW);
-
-	m_renderer2D.VAO->LinkAttribute(0, 3, GL_FLOAT, sizeof(Vertex), (void*)0); // X, Y, Z
-	m_renderer2D.VAO->LinkAttribute(1, 2, GL_FLOAT, sizeof(Vertex), (void*)(3 * sizeof(GLfloat))); // U, V
-	m_renderer2D.VAO->LinkAttribute(2, 1, GL_FLOAT, sizeof(Vertex), (void*)(5 * sizeof(GLfloat))); // Texture Index
-	m_renderer2D.VAO->Unbind();
-	m_renderer2D.Shader->Deactivate();
+	// - Don't create VBOBase/EBOData for legacy batch rendering
+	// - Don't load tilemap from JSON
+	// - Don't create VAO/VBO/EBO here (ChunkRenderProxyManager handles it)
 
 	SPDLOG_INFO("Finished initializing renderer.");
-
 	return true;
 }
 void Renderer::Shutdown()
@@ -98,7 +75,6 @@ void Renderer::OnUpdate(const float deltaTime)
 		m_renderer2D.Shader->Use();
 		m_renderer2D.Shader->UploadUniformMat4("u_view", m_camera.View);
 		m_renderer2D.Shader->UploadUniformMat4("u_projection", m_camera.Projection);
-
 		m_camera.NeedsUpdate = false;
 	}
 }
@@ -116,13 +92,13 @@ void Renderer::BeginBatch()
 }
 void Renderer::EndBatch()
 {
-	//  Uploads the accumulated vertex/index data to GPU buffers (glBufferSubData); Optionally calls Flush() to actually draw
+	// Uploads the accumulated vertex/index data to GPU buffers (glBufferSubData)
 	m_renderer2D.VBO->BufferSubData(0, m_renderer2D.VertexCount * sizeof(Vertex), m_renderer2D.VBOBase);
 	Flush();
 }
 void Renderer::Flush()
 {
-	// Binds all textures to their slots; Calls glDrawElements() or glDrawArrays(); Reset the batch if needed
+	// Binds all textures to their slots; Calls glDrawElements() or glDrawArrays()
 	if (m_renderer2D.VertexCount == 0) // Nothing to draw
 		return;
 
@@ -145,10 +121,128 @@ void Renderer::OnRender()
 {
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	if (m_renderer2D.IndexCount > 0)
-		Flush();
+	// Upload any dirty chunks
+	m_renderer2D.ChunkManager.UploadDirtyChunks();
 
-	// Application will take care of swapping buffers
+	// Bind shader
+	m_renderer2D.Shader->Use();
+
+	// Bind camera matrices
+	m_renderer2D.Shader->UploadUniformMat4("u_view", m_camera.View);
+	m_renderer2D.Shader->UploadUniformMat4("u_projection", m_camera.Projection);
+
+	// Bind all textures
+	for (uint32_t i = 0; i < m_renderer2D.TextureSlotIndex; ++i) {
+		glActiveTexture(GL_TEXTURE0 + i);
+
+		// Check atlas first, then regular texture
+		if (m_renderer2D.AtlasSlots[i] != nullptr) {
+			m_renderer2D.AtlasSlots[i]->GetTexture().Bind();
+		} else if (m_renderer2D.TextureSlots[i] != nullptr) {
+			m_renderer2D.TextureSlots[i]->Bind();
+		}
+		// Will use default texture 0 if null
+	}
+
+	// Render all chunks
+	m_renderer2D.ChunkManager.RenderAll();
+}
+
+void Renderer::InitChunkProxies(uint32_t worldWidthInChunks, uint32_t worldHeightInChunks)
+{
+	m_renderer2D.ChunkManager.InitializeChunks(worldWidthInChunks, worldHeightInChunks);
+}
+
+void Renderer::UpdateChunkTiles(uint32_t chunkX, uint32_t chunkY, const RenderTile* tiles, uint32_t tileCount)
+{
+	ChunkRenderProxy* chunk = m_renderer2D.ChunkManager.GetChunk(chunkX, chunkY);
+	if (!chunk) {
+		SPDLOG_ERROR("Failed to get chunk ({}, {})", chunkX, chunkY);
+		return;
+	}
+
+	// Proxy handles all the conversion internally
+	chunk->UpdateFromRenderTiles(tiles, tileCount);
+}
+
+uint32_t Renderer::LoadAndAddTextureAtlas(const char* path)
+{
+	if (!path) {
+		SPDLOG_ERROR("LoadAndAddTextureAtlas: null path");
+		return 0;
+	}
+
+	auto atlas = std::make_unique<TextureAtlas>(path);
+	TextureAtlas* atlasPtr = atlas.get();
+	m_renderer2D.Atlases.push_back(std::move(atlas));
+
+	return AddTextureAtlas(atlasPtr);
+}
+
+uint32_t Renderer::AddTextureAtlas(TextureAtlas* atlas)
+{
+	if (!atlas)
+		return 0;
+
+	// Check if atlas already exists
+	for (uint32_t i = 0; i < m_renderer2D.TextureSlotIndex; i++) {
+		if (m_renderer2D.AtlasSlots[i] == atlas) {
+			return i;
+		}
+	}
+
+	if (m_renderer2D.TextureSlotIndex >= Renderer2D::MAX_TEXTURES) {
+		SPDLOG_WARN("Texture slots full!");
+		return 0;
+	}
+
+	uint32_t slot = m_renderer2D.TextureSlotIndex++;
+	m_renderer2D.AtlasSlots[slot] = atlas;
+	return slot;
+}
+
+int Renderer::GetAtlasInfo(uint32_t atlasId, AtlasInfo* outInfo)
+{
+	if (!outInfo || atlasId >= Renderer2D::MAX_TEXTURES) {
+		SPDLOG_ERROR("Invalid atlas ID {} or null outInfo", atlasId);
+		return 0;
+	}
+
+	TextureAtlas* atlas = m_renderer2D.AtlasSlots[atlasId];
+	if (!atlas) {
+		SPDLOG_ERROR("Atlas ID {} not found", atlasId);
+		return 0;
+	}
+
+	// TODO: Change this to use pixels instead of rows/columns for UV
+	outInfo->rows = atlas->GetRows();
+	outInfo->columns = atlas->GetColumns();
+	outInfo->tileWidth = 1.0f / static_cast<float>(atlas->GetColumns());
+	outInfo->tileHeight = 1.0f / static_cast<float>(atlas->GetRows());
+
+	SPDLOG_INFO("GetAtlasInfo({}): {}x{} tiles, UV: {}x{}", atlasId, outInfo->rows, outInfo->columns, outInfo->tileWidth, outInfo->tileHeight);
+
+	return 1; // Success
+}
+
+void Renderer::GetTileUVs(uint32_t atlasId, uint32_t tileId, UVData* outData)
+{
+	if (atlasId >= Renderer2D::MAX_TEXTURES) {
+		SPDLOG_ERROR("Invalid atlas ID {}", atlasId);
+		return;
+	}
+
+	TextureAtlas* atlas = m_renderer2D.AtlasSlots[atlasId];
+	if (!atlas) {
+		SPDLOG_ERROR("Atlas ID {} not found", atlasId);
+		return;
+	}
+
+	glm::vec4 uvs = atlas->GetTileUVs(tileId);
+	outData->MinU = uvs.x;
+	outData->MinV = uvs.y;
+	outData->MaxU = uvs.z;
+	outData->MaxV = uvs.w;
 }
 
 void Renderer::DrawTilemapData(const TilemapData& tilemap)
@@ -159,7 +253,7 @@ void Renderer::DrawTilemapData(const TilemapData& tilemap)
 		return;
 	}
 
-	std::unique_ptr<TextureAtlas> atlas = std::make_unique<TextureAtlas>(tilemap.AtlasPath, tilemap.AtlasRows, tilemap.AtlasColumns);
+	std::unique_ptr<TextureAtlas> atlas = std::make_unique<TextureAtlas>(tilemap.AtlasPath);
 	m_renderer2D.Atlases.push_back(std::move(atlas));
 
 	TextureAtlas* atlasPtr = m_renderer2D.Atlases.back().get();
@@ -192,29 +286,6 @@ void Renderer::DrawTilemapQuad(int tileX, int tileY, int tileId, TextureAtlas* a
 	m_renderer2D.IndexCount += 6;
 }
 
-uint32_t Renderer::AddTextureAtlas(TextureAtlas* atlas)
-{
-	if (!atlas)
-		return 0;
-
-	// If the texture atlas already exists, just simply return it
-	for (uint32_t i = 0; i < m_renderer2D.TextureSlotIndex; i++) {
-		if (m_renderer2D.AtlasSlots[i] == atlas) {
-			return i;
-		}
-	}
-
-	if (m_renderer2D.TextureSlotIndex >= Renderer2D::MAX_TEXTURES) {
-		SPDLOG_WARN("Texture slots full!");
-		return 0;
-	}
-
-	// Otherwise increment hte global texture slot index
-	uint32_t slot = m_renderer2D.TextureSlotIndex++;
-	m_renderer2D.AtlasSlots[slot] = atlas;
-	return slot;
-}
-
 void Renderer::DrawQuad(const glm::vec3& position3D, float theta, const glm::vec2& scale, const glm::vec4& color, float index)
 {
 	if (is2DVBOFull(4) || is2DTexturesFull()) {
@@ -241,4 +312,4 @@ void Renderer::DrawQuad(const glm::mat4& transform, const glm::vec4& color, floa
 	m_renderer2D.VertexCount += 4;
 	m_renderer2D.IndexCount += 6;
 }
-}
+} // namespace TerracottaEngine

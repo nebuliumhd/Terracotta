@@ -81,4 +81,4 @@ bool InputSystem::IsMouseButtonDown(int mouse)
 {
 	return m_currMouseInputs[mouse] == InputState::PRESSED || m_currMouseInputs[mouse] == InputState::REPEATED;
 }
-}
+} // namespace TerracottaEngine

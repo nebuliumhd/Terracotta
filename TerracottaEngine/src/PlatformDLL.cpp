@@ -104,4 +104,4 @@ void UnloadDLLAndCleanup(DLL_HANDLE dll, const std::string& tempPath)
         }
     }
 }
-}
+} // namespace TerracottaEngine

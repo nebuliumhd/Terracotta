@@ -550,4 +550,4 @@ void AudioSystem::StopAudio(AudioSourceHandle source)
 		SPDLOG_ERROR("Cannot play an invalid AudioSource.");
 	}
 }
-}
+} // namespace TerracottaEngine

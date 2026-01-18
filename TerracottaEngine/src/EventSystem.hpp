@@ -209,4 +209,4 @@ CONSTRUCT_EVENT_TEMPLATE(WindowFocusEvent, WindowEventType, WindowFocus, m_windo
 CONSTRUCT_EVENT_TEMPLATE(WindowIconifyEvent, WindowEventType, WindowIconify, m_windowSubscribers);
 CONSTRUCT_EVENT_TEMPLATE(WindowMaximizeEvent, WindowEventType, WindowMaximize, m_windowSubscribers);
 CONSTRUCT_EVENT_TEMPLATE(WindowContentScaleEvent, WindowEventType, WindowContentScale, m_windowSubscribers);
-}
+} // namespace TerracottaEngine

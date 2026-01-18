@@ -17,6 +17,7 @@ target_include_directories(Terracotta
 		${CMAKE_CURRENT_SOURCE_DIR}/vendor/glm
 		${CMAKE_CURRENT_SOURCE_DIR}/vendor/uuid/include
 		${CMAKE_CURRENT_SOURCE_DIR}/vendor/json/include
+		${CMAKE_CURRENT_SOURCE_DIR}/vendor/fastnoiselite/include
 )
 
 # Link libraries here (LINK FROM MOST DEPENDENT TO LEAST DEPENDENT)

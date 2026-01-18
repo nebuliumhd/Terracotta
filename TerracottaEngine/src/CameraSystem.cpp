@@ -14,9 +14,6 @@ Camera::Camera(SubsystemManager& subsystem, Window& window) :
 	glm::ivec2 windowDimensions = window.GetWindowSize();
 	m_aspect = (float)windowDimensions.x / windowDimensions.y;
 
-	m_tilesInHeight = 16.0f;
-	m_zoom = 1.0f;
-
 	Position = glm::vec3(0.0f, 0.0f, 0.0f);
 	View = glm::lookAt(Position, Position + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	updateProjection();
@@ -28,6 +25,7 @@ Camera::~Camera()
 
 }
 
+// CameraSystem.cpp - Smooth camera movement without snapping
 void Camera::Update(const float deltaTime)
 {
 	InputSystem* is = m_managerRef.GetSubsystem<InputSystem>();
@@ -35,32 +33,37 @@ void Camera::Update(const float deltaTime)
 		SPDLOG_ERROR("The InputSystem is not initialized for the camera!");
 	}
 
+	float moveSpeed = 0.1f;
+
+	// Smooth movement (no snapping)
 	if (is->IsKeyDown(GLFW_KEY_W)) {
-		Position.y += 0.1f;
+		Position.y += moveSpeed;
 		NeedsUpdate = true;
 	} else if (is->IsKeyDown(GLFW_KEY_S)) {
-		Position.y -= 0.1f;
+		Position.y -= moveSpeed;
 		NeedsUpdate = true;
 	}
-
 	if (is->IsKeyDown(GLFW_KEY_A)) {
-		Position.x -= 0.1f;
+		Position.x -= moveSpeed;
 		NeedsUpdate = true;
 	} else if (is->IsKeyDown(GLFW_KEY_D)) {
-		Position.x += 0.1f;
+		Position.x += moveSpeed;
 		NeedsUpdate = true;
 	}
 
-	if (is->IsKeyDown(GLFW_KEY_Q)) {
-		m_zoom += 0.01f;
+	if (is->IsKeyStartPress(GLFW_KEY_Q) && m_currentZoomLevel < ZOOM_LEVEL_COUNT - 1) {
+		m_currentZoomLevel++;
+		m_zoom = getZoomLevel(m_currentZoomLevel);
 		updateProjection();
 		NeedsUpdate = true;
-	} else if (is->IsKeyDown(GLFW_KEY_E)) {
-		m_zoom -= 0.01f;
+	} else if (is->IsKeyStartPress(GLFW_KEY_E) && m_currentZoomLevel > 0) {
+		m_currentZoomLevel--;
+		m_zoom = getZoomLevel(m_currentZoomLevel);
 		updateProjection();
 		NeedsUpdate = true;
 	}
 
+	// Use actual position for smooth camera movement
 	View = glm::lookAt(Position, Position + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 }
 
@@ -86,4 +89,4 @@ void Camera::updateProjection()
 	float zoomedWidth = zoomedHeight * m_aspect;
 	Projection = glm::ortho(0.0f, zoomedWidth, 0.0f, zoomedHeight, -1.0f, 1.0f);
 }
-}
+} // namespace TerracottaEngine

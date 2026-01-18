@@ -25,4 +25,4 @@ private:
 	GLuint m_id = 0;
 	GLuint compileShader(GLuint type, const std::filesystem::path& shader);
 };
-}
+} // namespace TerracottaEngine

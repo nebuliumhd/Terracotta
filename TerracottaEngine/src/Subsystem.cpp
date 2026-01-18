@@ -20,4 +20,4 @@ void SubsystemManager::Update(float deltaTime)
 		subsystem->OnUpdate(deltaTime);
 	}
 }
-}
+} // namespace TerracottaEngine

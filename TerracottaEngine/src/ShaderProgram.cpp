@@ -114,4 +114,4 @@ void ShaderProgram::UploadUniformMat4(const std::string& uniformName, const glm:
 	}
 	glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
 }
-}
+} // namespace TerracottaEngine

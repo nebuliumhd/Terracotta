@@ -48,4 +48,4 @@ private:
 
 	void registerCallbacks();
 };
-}
+} // namespace TerracottaEngine

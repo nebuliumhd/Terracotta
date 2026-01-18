@@ -7,9 +7,9 @@ namespace TerracottaEngine
 {
 struct Vertex
 {
-	glm::vec3 Position;
-	glm::vec2 TextureCoord;
-	float TextureIndex;
+	glm::vec3 Position; // X, Y, Z
+	glm::vec2 TextureCoord; // U, V
+	float TextureIndex; // Texture slot
 };
 
 class VertexArray
@@ -39,4 +39,4 @@ private:
 	GLuint m_id = 0;
 	GLenum m_type;
 };
-}
+} // namespace TerracottaEngine

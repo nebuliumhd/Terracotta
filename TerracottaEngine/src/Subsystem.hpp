@@ -89,4 +89,4 @@ private:
 	std::vector<Subsystem*> m_subsystemOrder;
 	std::unordered_map<std::type_index, std::unique_ptr<Subsystem>> m_subsystemsMap;
 };
-}
+} // namespace TerracottaEngine

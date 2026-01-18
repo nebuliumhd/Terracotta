@@ -10,14 +10,36 @@
 
 namespace TerracottaEngine
 {
-JSONParser::JSONParser()
-{}
-JSONParser::~JSONParser()
-{}
+AtlasInfo JSONParser::LoadAtlasInfo(const Filepath& path)
+{
+	AtlasInfo result = {};
+
+	std::string fileName = path.filename().string();
+	if (!std::filesystem::exists(path)) {
+		SPDLOG_ERROR("Failed to find tileset file \"{}\"", fileName);
+		return result;
+	}
+
+	// Load tileset metadata file
+	std::ifstream jsonFile("../../../../../TerracottaGame/res/tileset/tileset_metadata.json");
+	if (!jsonFile) {
+		SPDLOG_ERROR("Failed to open the tileset_metadata.json file.");
+		return result;
+	}
+
+	json data = json::parse(jsonFile);
+
+	result.tileWidth = data[fileName]["tile_width"];
+	result.tileHeight = data[fileName]["tile_height"];
+	result.rows = data[fileName]["rows"];
+	result.columns = data[fileName]["columns"];
+	
+	return result;
+}
 
 TilemapData JSONParser::LoadTilemapFromFile(const Filepath& path)
 {
-	TilemapData result;
+	TilemapData result = {};
 
 	std::ifstream jsonFile(path);
 	if (!jsonFile) {
@@ -72,4 +94,4 @@ void JSONParser::SaveTilemapToFile(const TilemapData& tilemap, const Filepath& p
 
 	jsonFile << data.dump(4);
 }
-}
+} // namespace TerracottaEngine

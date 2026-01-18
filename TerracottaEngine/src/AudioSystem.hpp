@@ -141,4 +141,4 @@ private:
 	AudioBuffer* getBufferObject(AudioBufferHandle buffer);
 	bool checkALError(const std::string& context);
 };
-}
+} // namespace TerracottaEngine

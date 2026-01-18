@@ -17,6 +17,8 @@ public:
 	GLuint GetID() const { return m_id; }
 	void Bind() const { glBindTexture(GL_TEXTURE_2D, m_id); }
 	static void Unbind() { glBindTexture(GL_TEXTURE_2D, 0); }
+	int GetWidth() const { return static_cast<int>(m_dimensions.x); }
+	int GetHeight() const { return static_cast<int>(m_dimensions.y); }
 	glm::vec2 GetDimensions() const { return m_dimensions; }
 private:
 	GLuint m_id = 0;
@@ -26,7 +28,7 @@ private:
 class TextureAtlas
 {
 public:
-	TextureAtlas(const Filepath& atlasPath, int rows, int columns);
+	TextureAtlas(const Filepath& atlasPath);
 	~TextureAtlas();
 
 	glm::vec2 GetAtlasDimensions() const { return m_atlas.GetDimensions(); }
@@ -44,4 +46,4 @@ private:
 	int m_rows, m_columns;
 	float m_tileWidth, m_tileHeight; // UV width (1.0 / columns), (1.0 / rows)
 };
-}
+} // namespace TerracottaEngine

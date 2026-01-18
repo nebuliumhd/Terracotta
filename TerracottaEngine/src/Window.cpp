@@ -52,4 +52,4 @@ void Window::glfwErrorCallback(int error, const char* description)
 {
 	SPDLOG_ERROR("GLFW Error {}: {}", error, description);
 }
-}
+} // namespace TerracottaEngine

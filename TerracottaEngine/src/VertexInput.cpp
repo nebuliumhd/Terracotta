@@ -45,4 +45,4 @@ void BufferObject::BufferSubData(GLintptr offset, GLsizeiptr size, const void* d
 	glBufferSubData(m_type, offset, size, data);
 }
 
-}
+} // namespace TerracottaEngine

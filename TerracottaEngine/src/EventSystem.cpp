@@ -193,4 +193,4 @@ static void glfwWindowContentScaleCallback(GLFWwindow* window, float xscale, flo
 	event.YScale = yscale;
 	es->DispatchEvent(event);
 }
-}
+} // namespace TerracottaEngine

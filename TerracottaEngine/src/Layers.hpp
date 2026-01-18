@@ -54,4 +54,4 @@ public:
 private:
 	GLFWwindow* m_glfwWindow = nullptr;
 };
-}
+} // namespace TerracottaEngine

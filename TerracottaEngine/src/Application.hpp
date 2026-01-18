@@ -4,8 +4,8 @@
 #include <memory>
 #include <string>
 
+#include "EngineAPI.h"
 #include "PlatformDLL.hpp"
-#include "EngineAPI.hpp"
 #include "Subsystem.hpp"
 #include "Layers.hpp"
 #include "Window.hpp"
@@ -13,11 +13,13 @@
 #include "EventSystem.hpp"
 #include "InputSystem.hpp"
 #include "AudioSystem.hpp"
+#include "RandomGenerator.hpp"
 
 namespace TerracottaEngine
 {
+using GameInstance = void*;
 using GameInitFn = void*(*)(EngineAPI*);
-using GameUpdateFn = void(*)(void*, float);
+using GameUpdateFn = void(*)(void*, const float);
 using GameShutdownFn = void(*)(void*);
 using GameSerializeStateFn = void*(*)(void*, size_t*);
 using GameDeserializeStateFn = void*(*)(EngineAPI*, void*, size_t);
@@ -43,9 +45,9 @@ public:
 	void Stop();
 	bool IsAppRunning() const { return m_running; }
 
-	// FOR THE ENGINE_API:
-	void Log(const char* msg) { SPDLOG_INFO("Hello from {}", msg); }
-	bool IsKeyStartPress(int key) { return m_inputSystem->IsKeyStartPress(key); }
+	Renderer* GetRenderer() { return m_renderer; }
+	InputSystem* GetInputSystem() { return m_inputSystem; }
+	RandomGenerator* GetRandomGenerator() { return m_randomGenerator; }
 private:
 	void update(const float deltaTime);
 	void render();
@@ -56,16 +58,23 @@ private:
 	EventSystem* m_eventSystem = nullptr;
 	AudioSystem* m_audioSystem = nullptr;
 	Renderer* m_renderer = nullptr;
+	RandomGenerator* m_randomGenerator = nullptr;
 
 	// Other systems
 	std::unique_ptr<Window> m_window = nullptr;
 
+	GameAPI m_gameAPI;
+	EngineAPI m_engineAPI;
+	GameInstance m_gameInstance = nullptr;
+	GameInitFn m_gameInitFn = nullptr;
+	GameUpdateFn m_gameUpdateFn = nullptr;
+	GameShutdownFn m_gameShutdownFn = nullptr;
+	GameSerializeStateFn m_gameSerializeFn = nullptr;
+	GameDeserializeStateFn m_gameDeserializeFn = nullptr;
+
 	// Game
 	DLL_HANDLE m_dllHandle = nullptr;
 	std::string m_dllTempPath; // Path to temp copy (for cleanup)
-	GameAPI m_gameAPI;
-	EngineAPI m_engineAPI;
-	void* m_gameInstance = nullptr;
 	
 	bool loadGameDLL();
 	void unloadGameDLL();
@@ -78,4 +87,4 @@ private:
 	int m_maxFPS, m_maxUPS;
 	float m_targetFrameDelay, m_targetUpdateDelay;
 };
-}
+} // namespace TerracottaEngine

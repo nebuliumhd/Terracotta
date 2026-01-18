@@ -22,4 +22,4 @@ private:
 	GLFWmonitor* m_primaryMonitor = nullptr;
 	int m_windowWidth, m_windowHeight;
 };
-}
+} // namespace TerracottaEngine

@@ -20,17 +20,24 @@ public:
 
 	// Other stuff later...
 private:
-	static constexpr float MAX_ZOOM = 1.5f;
-	static constexpr float MIN_ZOOM = 0.5f;
+	static constexpr int ZOOM_LEVEL_COUNT = 4;
+	int m_currentZoomLevel = 0; // Start at 1.0x zoom
 	float m_zoom = 1.0f;
 	float m_moveSpeed = 1.0f;
 	float m_aspect;
-	float m_tilesInHeight;
+	float m_tilesInHeight = 32.0f;
 
 	SubsystemManager& m_managerRef;
 	Window* m_window;
 
 	void updateProjection();
 	void registerCallbacks();
+
+	float getZoomLevel(int level) const
+	{
+		// Only integer zooms for pixel-perfect rendering
+		static const float ZOOM_LEVELS[] = {1.0f, 2.0f, 3.0f, 4.0f};
+		return ZOOM_LEVELS[level];
+	}
 };
-}
+} // namespace TerracottaEngine
